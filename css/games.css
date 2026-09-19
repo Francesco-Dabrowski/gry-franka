@@ -1059,6 +1059,39 @@
   margin-bottom: 4px;
 }
 
+.editor__props {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px groove #fff;
+}
+
+.editor__prop {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+
+.editor__prop span {
+  display: block;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+.editor__prop b {
+  font-size: 13px;
+}
+
+.editor__prop small {
+  display: block;
+  margin-top: 3px;
+  color: #404040;
+  text-transform: none;
+}
+
+.editor__prop input[type="range"] {
+  width: 100%;
+}
+
 .editor__stage {
   flex: 1 1 auto;
   min-width: 0;

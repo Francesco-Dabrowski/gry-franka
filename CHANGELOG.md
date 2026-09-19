@@ -11,6 +11,7 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 - Katalog struktur: nowa, zmiana nazwy, duplikowanie, usuwanie; zapis w `localStorage`.
 - Parametr rozmiaru wyświetlanego tile'a: 50, 100 lub custom (8–200 px).
 - Powiększanie/pomniejszanie mapy: przyciski − / + / Reset, `Ctrl` + kółko myszy, skróty `+`/`-`/`0`. Poziom zoomu pokazywany w procentach i zapisywany.
+- Parametry struktury 1–10: **rzadkość** (1 = bardzo bardzo rzadka, 10 = bardzo częsta) oraz **powtarzalność** (1 = 1–10 powtórzeń, 10 = 100–500+; w linii lub na powierzchni). Wartości zapisywane i dołączane do kodu/JSON struktury.
 - Każda struktura generuje kod (`ZFG-STRUKTURA v1`, znaki `. 0 1 x`) oraz JSON do skopiowania — do późniejszego przetworzenia na realne struktury Backrooms.
 
 ### Backrooms — kamera (pitch), 3D otchłań, wolniejsza stamina, system wzorów

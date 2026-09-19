@@ -5,6 +5,24 @@
   var B = 16;
   var PAINT = { '.': '#000000', '0': '#e8dcb0', '1': '#8a7a52', 'x': '#1b1b52' };
 
+  var REPEAT_HINTS = {
+    1: '1–10', 2: '2–15', 3: '5–25', 4: '10–40', 5: '20–60',
+    6: '35–90', 7: '50–140', 8: '70–220', 9: '90–350', 10: '100–500+'
+  };
+
+  var RARITY_HINTS = {
+    1: 'bardzo bardzo rzadka (~0,1%)',
+    2: 'bardzo rzadka (~0,3%)',
+    3: 'rzadka (~1%)',
+    4: 'dość rzadka (~2%)',
+    5: 'średnia (~4%)',
+    6: 'dość częsta (~8%)',
+    7: 'częsta (~15%)',
+    8: 'bardzo częsta (~25%)',
+    9: 'bardzo częsta (~40%)',
+    10: 'dominująca (~60%+)'
+  };
+
   function uid() {
     return 's' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
   }
@@ -189,6 +207,8 @@
           name: 'Przykład — filary',
           cols: grid[0].length,
           rows: grid.length,
+          rarity: 5,
+          repeat: 5,
           grid: grid
         });
       }
@@ -210,6 +230,8 @@
             s.grid = (s.grid || []).map(function (row) {
               return typeof row === 'string' ? row.split('') : row.slice();
             });
+            if (s.rarity == null) s.rarity = 5;
+            if (s.repeat == null) s.repeat = 5;
             return s;
           });
           this.currentId = data.currentId || null;
@@ -231,7 +253,11 @@
             zoom: self.zoom,
             currentId: self.currentId,
             structures: self.structures.map(function (s) {
-              return { id: s.id, name: s.name, cols: s.cols, rows: s.rows, grid: s.grid.map(function (r) { return r.join(''); }) };
+              return {
+                id: s.id, name: s.name, cols: s.cols, rows: s.rows,
+                rarity: s.rarity, repeat: s.repeat,
+                grid: s.grid.map(function (r) { return r.join(''); })
+              };
             })
           };
           localStorage.setItem(KEY, JSON.stringify(payload));
@@ -319,6 +345,29 @@
       document.getElementById('btn-copy').addEventListener('click', function () { self.copy('code'); });
       document.getElementById('btn-copy-json').addEventListener('click', function () { self.copy('json'); });
 
+      var rarity = document.getElementById('rarity');
+      var repeat = document.getElementById('repeat');
+      if (rarity) {
+        rarity.addEventListener('input', function () {
+          var s = self.current();
+          if (!s) return;
+          s.rarity = parseInt(rarity.value, 10);
+          self.updatePropsLabels(s);
+          self.updateCode();
+          self.save();
+        });
+      }
+      if (repeat) {
+        repeat.addEventListener('input', function () {
+          var s = self.current();
+          if (!s) return;
+          s.repeat = parseInt(repeat.value, 10);
+          self.updatePropsLabels(s);
+          self.updateCode();
+          self.save();
+        });
+      }
+
       this.canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
       this.canvas.addEventListener('pointerdown', function (e) { self.onDown(e); });
       this.canvas.addEventListener('pointermove', function (e) { self.onMove(e); });
@@ -366,6 +415,29 @@
       this.canvas.style.height = (s.rows * e) + 'px';
     },
 
+    syncProps: function () {
+      var s = this.current();
+      if (!s) return;
+      if (s.rarity == null) s.rarity = 5;
+      if (s.repeat == null) s.repeat = 5;
+      var rarity = document.getElementById('rarity');
+      var repeat = document.getElementById('repeat');
+      if (rarity) rarity.value = s.rarity;
+      if (repeat) repeat.value = s.repeat;
+      this.updatePropsLabels(s);
+    },
+
+    updatePropsLabels: function (s) {
+      var rv = document.getElementById('rarity-val');
+      var rh = document.getElementById('rarity-hint');
+      var pv = document.getElementById('repeat-val');
+      var ph = document.getElementById('repeat-hint');
+      if (rv) rv.textContent = s.rarity;
+      if (pv) pv.textContent = s.repeat;
+      if (rh) rh.textContent = '1 = bardzo bardzo rzadka, 10 = bardzo częsta — ' + (RARITY_HINTS[s.rarity] || '');
+      if (ph) ph.textContent = 'powtórzenia: ' + (REPEAT_HINTS[s.repeat] || '') + ' (w linii lub na powierzchni)';
+    },
+
     renderCatalog: function () {
       var self = this;
       var list = document.getElementById('catalog');
@@ -385,6 +457,7 @@
       this.renderCatalog();
       this.renderCanvas();
       this.applyCanvasSize();
+      this.syncProps();
       this.updateCode();
       this.save();
     },
@@ -504,7 +577,7 @@
         if (!res) return;
         var cols = Math.max(1, Math.min(200, parseInt(res.cols, 10) || 16));
         var rows = Math.max(1, Math.min(200, parseInt(res.rows, 10) || 16));
-        var s = { id: uid(), name: res.name || 'Struktura', cols: cols, rows: rows, grid: makeGrid(cols, rows) };
+        var s = { id: uid(), name: res.name || 'Struktura', cols: cols, rows: rows, rarity: 5, repeat: 5, grid: makeGrid(cols, rows) };
         self.structures.push(s);
         self.select(s.id);
       });
@@ -525,7 +598,7 @@
     duplicateStructure: function () {
       var s = this.current();
       if (!s) return;
-      var copy = { id: uid(), name: s.name + ' — kopia', cols: s.cols, rows: s.rows, grid: cloneGrid(s.grid) };
+      var copy = { id: uid(), name: s.name + ' — kopia', cols: s.cols, rows: s.rows, rarity: s.rarity, repeat: s.repeat, grid: cloneGrid(s.grid) };
       this.structures.push(copy);
       this.select(copy.id);
     },
@@ -554,6 +627,8 @@
       lines.push('# nazwa: ' + s.name);
       lines.push('# komorka: 3x3 male tile');
       lines.push('# rozmiar: ' + s.cols + 'x' + s.rows);
+      lines.push('# rzadkosc: ' + (s.rarity || 5) + '/10  (1 = bardzo bardzo rzadka, 10 = bardzo czesta)');
+      lines.push('# powtarzalnosc: ' + (s.repeat || 5) + '/10  (1 = ' + (REPEAT_HINTS[1]) + ' powtorzen, 10 = ' + (REPEAT_HINTS[10]) + '; w linii lub na powierzchni)');
       lines.push('# legenda: . puste | 0 podloga | 1 sciana | x dziura');
       lines.push('#---');
       for (var y = 0; y < s.rows; y++) lines.push(s.grid[y].join(''));
@@ -570,6 +645,9 @@
         cell: '3x3 tile',
         cols: s.cols,
         rows: s.rows,
+        rarity: s.rarity || 5,
+        repeat: s.repeat || 5,
+        repeatRange: REPEAT_HINTS[s.repeat || 5],
         legend: { '.': 'puste', '0': 'podloga', '1': 'sciana', 'x': 'dziura' },
         grid: s.grid.map(function (r) { return r.join(''); })
       }, null, 2);
