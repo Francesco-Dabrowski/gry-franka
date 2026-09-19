@@ -4,6 +4,12 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 
 ## 2026-09-20
 
+### Backrooms — kamera (pitch), 3D otchłań, wolniejsza stamina, system wzorów
+- Rozglądanie w pionie: **strzałki w górę/w dół** oraz **mysz w pionie** (y-shear rzutowania; pitch ograniczony).
+- Nieskończona otchłań renderowana w 3D — spadanie to prawdziwy zjazd kamery w dół szybu (4 ściany w perspektywie, głębokość 44), zamiast ekranowej animacji 2D.
+- Stamina zużywa się wolniej (`16/s` zamiast `26/s`), regeneracja szybsza.
+- Nowy system wzorów zamiast losowych struktur: wzory to rzut z góry, gdzie `0` = podłoga, `1` = ściana, `x` = dziura w dół. Wzory są nazwane, mają wagę i są kafelkowane na chunk; przejścia między chunkami są gwarantowane. Na razie wbudowany wzór `filary-2x2` (do podmiany na wzory użytkownika).
+
 ### Backrooms — kolory, prawdziwe 3D schody, pokoje jak na zdjęciach
 - Ujednolicona paleta bez szarych bloków: podłoga, ściany, sufit, filary i wnętrza dziur w ciepłej żółto-beżowej tonacji. Usunięte czerwone warianty podłogi i szare linie.
 - Schody renderowane jako prawdziwa geometria 3D: stopnie, podstopnie i ściany szybu rzutowane z buforem głębi. Są widoczne od razu, z każdej odległości i kąta. Wejście na schody to płynne przejście (zaciemnienie) i ekran wygranej.

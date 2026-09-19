@@ -51,8 +51,12 @@
 
   var HOLE_TILE = 6;
   var FALL_TILES = 30;
-  var FALL_RATE = 7.5;
+  var FALL_RATE = 8.5;
   var STAIR_SLOTS = 4;
+  var PITCH_MAX = 95;
+  var ABYSS_DEPTH = 44;
+  var STAMINA_DRAIN = 16;
+  var STAMINA_REGEN = 24;
 
   var DISTRICT_CHUNKS = 4;
 
@@ -456,6 +460,40 @@
     return ((255 << 24) | (byte(b) << 16) | (byte(g) << 8) | byte(r)) >>> 0;
   }
 
+  // --- room patterns (top-down) ---
+  // '0' = podloga (mozna chodzic), '1' = sciana, 'x' = dziura w dol (nieskonczona)
+  // Wzory sa kafelkowane, aby wypelnic chunk 16x16. weight = czestotliwosc.
+  var PATTERNS = [
+    {
+      name: 'filary-2x2',
+      weight: 1,
+      rows: [
+        '1111111111111111',
+        '1000000000000001',
+        '1011000011000101',
+        '1011000011000101',
+        '1000000000000001',
+        '1000000000000001',
+        '1000011001100001',
+        '1000011001100001',
+        '1000000000000001',
+        '1000011001100001',
+        '1000011001100001',
+        '1000000000000001',
+        '1000000000000001',
+        '1011000011000101',
+        '1011000011000101',
+        '1111111111111111'
+      ]
+    }
+  ];
+
+  function patternChar(ch) {
+    if (ch === '1') return 1;
+    if (ch === 'x' || ch === 'X') return HOLE_TILE;
+    return 0;
+  }
+
   class Backrooms extends ZFG.Game {
     constructor(container, opts) {
       super(container, opts);
@@ -470,6 +508,8 @@
       this.vhsIntensity = VHS_INTENSITY[0];
       this.time = 0;
       this.sens = 0.0022;
+      this.sensPitch = 1.35;
+      this.pitchPx = 0;
       this.skipMouse = false;
       this.dragging = false;
       this.started = false;
@@ -706,6 +746,7 @@
       this.py = spawn.y;
       this.ang = spawn.a;
       this.camZ = EYE;
+      this.pitchPx = 0;
       this.zVel = 0;
       this.onGround = true;
       this.bob = 0;
@@ -800,120 +841,48 @@
       return ch;
     }
 
-    themeFor(cx, cy) {
-      var dx = Math.floor(cx / DISTRICT_CHUNKS);
-      var dy = Math.floor(cy / DISTRICT_CHUNKS);
-      var seed = this.worldSeed >>> 0;
-      if ((hashInt(dx, dy, seed ^ 0x9E37) % 100) < 7) return 5;
-      var v = hashInt(dx + 7, dy - 3, seed ^ 0x1F3D) % 100;
-      if (v < 28) return 0;
-      if (v < 50) return 1;
-      if (v < 68) return 2;
-      if (v < 86) return 3;
-      return 4;
+    choosePattern(cx, cy) {
+      var list = PATTERNS;
+      var total = 0;
+      var i;
+      for (i = 0; i < list.length; i++) total += (list[i].weight || 1);
+      var v = hashInt(cx, cy, (this.worldSeed ^ 0x7A11) >>> 0) % 1000000;
+      var pick = (v / 1000000) * total;
+      var acc = 0;
+      for (i = 0; i < list.length; i++) {
+        acc += (list[i].weight || 1);
+        if (pick < acc) return list[i];
+      }
+      return list[list.length - 1];
     }
 
     generateChunk(cx, cy) {
       var tiles = new Uint8Array(C * C);
       tiles.fill(1);
       var rng = mulberry32(hashInt(cx, cy, (this.worldSeed ^ 0x51A7) >>> 0) >>> 0);
-      var theme = this.themeFor(cx, cy);
+      var pattern = this.choosePattern(cx, cy);
+      var rows = pattern.rows;
+      var ph = rows.length;
+      var pw = rows[0].length;
       var i, x, y;
 
-      if (theme === 0) {
-        carveRect(tiles, 1, 1, C - 2, C - 2, 0);
-        for (y = 3; y < C - 2; y += 6) {
-          for (x = 3; x < C - 2; x += 6) {
-            carveRect(tiles, x, y, 2, 2, 1);
-          }
+      for (y = 0; y < C; y++) {
+        var prow = rows[y % ph];
+        for (x = 0; x < C; x++) {
+          tiles[y * C + x] = patternChar(prow.charAt(x % pw));
         }
-      } else if (theme === 1) {
-        carveRect(tiles, 1, 1, C - 2, C - 2, 0);
-        for (y = 2; y < C - 2; y += 4) {
-          for (x = 2; x < C - 2; x += 4) {
-            carveRect(tiles, x, y, 1, 1, 1);
-          }
-        }
-      } else if (theme === 2) {
-        carveRect(tiles, 1, 1, C - 2, C - 2, 1);
-        for (y = 2; y < C - 1; y += 5) carveRect(tiles, 1, y, C - 2, 3, 0);
-        for (x = 3; x < C - 1; x += 6) carveRect(tiles, x, 1, 2, C - 2, 0);
-      } else if (theme === 3) {
-        carveRect(tiles, 1, 1, C - 2, C - 2, 1);
-        for (var ry = 2; ry < C - 3; ry += 5) {
-          for (var rx = 2; rx < C - 3; rx += 5) {
-            carveRect(tiles, rx, ry, 3, 3, 0);
-            if (rng() < 0.78 && rx + 3 < C - 1) tiles[(ry + 1) * C + (rx + 3)] = 0;
-            if (rng() < 0.78 && ry + 3 < C - 1) tiles[(ry + 3) * C + (rx + 1)] = 0;
-          }
-        }
-      } else if (theme === 4) {
-        carveRect(tiles, 1, 1, C - 2, C - 2, 0);
-        var hstep = rng() < 0.5 ? 3 : 4;
-        var hw = rng() < 0.55 ? 1 : 2;
-        for (y = 2; y < C - 2; y += hstep) {
-          for (x = 2; x < C - 2; x += hstep) {
-            carveRect(tiles, x, y, hw, hw, HOLE_TILE);
-          }
-        }
-      } else if (theme === 5) {
-        carveRect(tiles, 1, 1, C - 2, C - 2, 0);
-        for (y = 3; y < C - 2; y += 5) {
-          for (x = 3; x < C - 2; x += 5) {
-            carveRect(tiles, x, y, 2, 2, 1);
-          }
-        }
-      } else {
-        carveRect(tiles, 2, 2, C - 4, C - 4, 0);
       }
 
-      var extra = (rng() * 5) | 0;
-      for (i = 0; i < extra; i++) {
-        var ex2 = 2 + ((rng() * (C - 4)) | 0);
-        var ey2 = 2 + ((rng() * (C - 4)) | 0);
-        if (tiles[ey2 * C + ex2] === 0) tiles[ey2 * C + ex2] = 1;
-      }
-
-      var edges = [];
-      var lp = verticalPassages(cx, cy);
-      edges.push([0, lp[0]]);
-      edges.push([0, lp[1]]);
-      var rp = verticalPassages(cx + 1, cy);
-      edges.push([C - 1, rp[0]]);
-      edges.push([C - 1, rp[1]]);
-      var tp = horizontalPassages(cx, cy);
-      edges.push([tp[0], 0]);
-      edges.push([tp[1], 0]);
-      var bp = horizontalPassages(cx, cy + 1);
-      edges.push([bp[0], C - 1]);
-      edges.push([bp[1], C - 1]);
-
-      for (var e = 0; e < edges.length; e++) {
-        var ex3 = edges[e][0];
-        var ey3 = edges[e][1];
-        tiles[ey3 * C + ex3] = 0;
-        if (ex3 === 0) tiles[ey3 * C + 1] = 0;
-        else if (ex3 === C - 1) tiles[ey3 * C + (C - 2)] = 0;
-        else if (ey3 === 0) tiles[1 * C + ex3] = 0;
-        else tiles[(C - 2) * C + ex3] = 0;
-        connectCells(tiles, ex3, ey3, C >> 1, C >> 1);
-      }
-
-      carveRect(tiles, (C >> 1) - 1, (C >> 1) - 1, 3, 3, 0);
-
-      for (i = 0; i < 8; i++) {
-        var lx2 = 1 + ((rng() * (C - 2)) | 0);
-        var ly2 = 1 + ((rng() * (C - 2)) | 0);
-        if (tiles[ly2 * C + lx2] !== 0) continue;
-        var okk = true;
-        for (var oy = -1; oy <= 1 && okk; oy++) {
-          for (var ox = -1; ox <= 1; ox++) {
-            if (ox === 0 && oy === 0) continue;
-            if (tiles[(ly2 + oy) * C + (lx2 + ox)] !== 0) { okk = false; break; }
-          }
-        }
-        if (okk) tiles[ly2 * C + lx2] = 1;
-      }
+      var hm = C >> 1;
+      tiles[1 * C + hm] = 0;
+      tiles[(C - 2) * C + hm] = 0;
+      tiles[hm * C + 1] = 0;
+      tiles[hm * C + (C - 2)] = 0;
+      carveRect(tiles, hm - 1, hm - 1, 3, 3, 0);
+      connectCells(tiles, hm, 0, hm, hm);
+      connectCells(tiles, hm, C - 1, hm, hm);
+      connectCells(tiles, 0, hm, hm, hm);
+      connectCells(tiles, C - 1, hm, hm, hm);
 
       var stair = null;
       if (rng() < EXIT_CHANCE) {
@@ -1197,13 +1166,17 @@
       if (this.paused || this.dead || this.endingShown || !this.started) return;
       if (!this.locked && !this.dragging) return;
       var mx = event.movementX || 0;
+      var my = event.movementY || 0;
       if (this.skipMouse) {
         this.skipMouse = false;
         return;
       }
       if (mx > 140) mx = 140;
       else if (mx < -140) mx = -140;
+      if (my > 140) my = 140;
+      else if (my < -140) my = -140;
       this.ang += mx * this.sens;
+      this.pitchPx = clamp(this.pitchPx - my * this.sensPitch, -PITCH_MAX, PITCH_MAX);
     }
 
     onKeyDown(event) {
@@ -1448,11 +1421,7 @@
       if (dt > 0.1) dt = 0.1;
       if (dt <= 0) dt = 0.0001;
       this.update(dt);
-      if (this.descendMode === 'fall' && (this.descending || this.fadingOut)) {
-        this.renderFall();
-      } else {
-        this.render();
-      }
+      this.render();
       this.postFrame();
       this.drawPixelHud();
       this.ctx.putImageData(this.imageData, 0, 0);
@@ -1528,12 +1497,15 @@
       var fwd = 0;
       var strafe = 0;
       var turn = 0;
-      if (keys.w || keys.arrowup) fwd += 1;
-      if (keys.s || keys.arrowdown) fwd -= 1;
+      if (keys.w) fwd += 1;
+      if (keys.s) fwd -= 1;
       if (keys.d) strafe += 1;
       if (keys.a) strafe -= 1;
       if (keys.arrowleft) turn -= 1;
       if (keys.arrowright) turn += 1;
+
+      if (keys.arrowup) this.pitchPx = clamp(this.pitchPx + 95 * dt, -PITCH_MAX, PITCH_MAX);
+      if (keys.arrowdown) this.pitchPx = clamp(this.pitchPx - 95 * dt, -PITCH_MAX, PITCH_MAX);
 
       var wantJump = !!keys[' '];
       var wantSprint = !!keys.shift;
@@ -1566,9 +1538,9 @@
       speed *= dt;
 
       if (canSprint) {
-        this.stamina = Math.max(0, this.stamina - 26 * dt);
+        this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN * dt);
       } else {
-        this.stamina = Math.min(100, this.stamina + (fwd || strafe ? 13 : 20) * dt);
+        this.stamina = Math.min(100, this.stamina + (fwd || strafe ? STAMINA_REGEN * 0.7 : STAMINA_REGEN) * dt);
       }
 
       var dirX = Math.cos(this.ang);
@@ -1619,7 +1591,9 @@
       this.descendMode = 'fall';
       this.endKind = 'fall';
       this.fallK = 0;
-      this.cutDark = 0.6;
+      this.camZ = EYE + 0.2;
+      this.bob = 0;
+      this.cutDark = 0.5;
       this.keys = {};
       if (this.audio) this.audio.buzz(0);
       this.setStatus('Wpadłeś w dziurę — spadasz w nieskończoność...');
@@ -1649,8 +1623,9 @@
     }
 
     updateFall(dt) {
-      this.fallK += dt * FALL_RATE;
-      if (this.fallK >= FALL_TILES) {
+      this.camZ -= FALL_RATE * dt;
+      this.fallK = -this.camZ;
+      if (-this.camZ >= FALL_TILES) {
         this.descending = false;
         this.fadingOut = true;
         this.endKind = 'fall';
@@ -1726,8 +1701,10 @@
       var dirY = Math.sin(this.ang);
       var planeX = -dirY * FOV;
       var planeY = dirX * FOV;
-      var horizon = HALF;
-      var camZ = clamp(this.camZ + this.bob, EYE_MIN, EYE_MAX);
+      var horizon = HALF + this.pitchPx;
+      var camZ = this.descendMode === 'fall'
+        ? this.camZ
+        : clamp(this.camZ + this.bob, EYE_MIN, EYE_MAX);
       var flicker = this.flicker;
 
       var lvA = this.lvA;
@@ -1744,6 +1721,13 @@
 
       var dbuf = this.dbuf;
       dbuf.fill(1e9);
+
+      if (camZ < 0.03) {
+        var black = pack(6, 6, 6);
+        for (var bi = 0; bi < buf.length; bi++) buf[bi] = black;
+        this.renderShafts3D(dirX, dirY, planeX, planeY, camZ, horizon, topLevel);
+        return;
+      }
 
       var wallShades = this.wallShades;
       var wallBloodShades = this.wallBloodShades;
@@ -2143,31 +2127,38 @@
     }
 
     renderPitTile(tx, ty, camZ, horizon, dirX, dirY, planeX, planeY) {
-      var col = [146, 136, 104];
-      var depth = 3.4;
-      this._vplane(0, tx, ty, ty + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
-      this._vplane(0, tx + 1, ty, ty + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
-      this._vplane(1, ty, tx, tx + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
-      this._vplane(1, ty + 1, tx, tx + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      var c0 = 150;
+      var c1 = 140;
+      var c2 = 106;
+      var depth = ABYSS_DEPTH;
+      var px = this.px;
+      var py = this.py;
+      if (px > tx) this._vplane(0, tx, ty, ty + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      if (px < tx + 1) this._vplane(0, tx + 1, ty, ty + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      if (py > ty) this._vplane(1, ty, tx, tx + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      if (py < ty + 1) this._vplane(1, ty + 1, tx, tx + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
     }
 
     renderShafts3D(dirX, dirY, planeX, planeY, camZ, horizon, topLevel) {
       var i;
-      var exits = this.exitsNear;
-      for (i = 0; i < exits.length; i++) {
-        var e = exits[i];
-        var dx = (e.cx + 0.5) - this.px;
-        var dy = (e.cy + 0.5) - this.py;
-        var fd = dx * dirX + dy * dirY;
-        if (fd < 0.3 || fd > 18) continue;
-        var lat = -dx * dirY + dy * dirX;
-        if (Math.abs(lat) > fd * (0.9 + FOV) + 1.6) continue;
-        this.renderStairTile(e.cx, e.cy, camZ, horizon, dirX, dirY, planeX, planeY);
+
+      if (camZ >= 0) {
+        var exits = this.exitsNear;
+        for (i = 0; i < exits.length; i++) {
+          var e = exits[i];
+          var dx = (e.cx + 0.5) - this.px;
+          var dy = (e.cy + 0.5) - this.py;
+          var fd = dx * dirX + dy * dirY;
+          if (fd < 0.3 || fd > 18) continue;
+          var lat = -dx * dirY + dy * dirX;
+          if (Math.abs(lat) > fd * (0.9 + FOV) + 1.6) continue;
+          this.renderStairTile(e.cx, e.cy, camZ, horizon, dirX, dirY, planeX, planeY);
+        }
       }
 
       var ptx = Math.floor(this.px);
       var pty = Math.floor(this.py);
-      var pr = 5;
+      var pr = 4;
       for (var oy = -pr; oy <= pr; oy++) {
         for (var ox = -pr; ox <= pr; ox++) {
           var tx = ptx + ox;
@@ -2175,8 +2166,7 @@
           if (this.tileAt(tx + 0.5, ty + 0.5) !== HOLE_TILE) continue;
           var hx = tx + 0.5 - this.px;
           var hy = ty + 0.5 - this.py;
-          var hd = hx * dirX + hy * dirY;
-          if (hd < 0.25 || hd > 10) continue;
+          if (hx * hx + hy * hy > 100) continue;
           this.renderPitTile(tx, ty, camZ, horizon, dirX, dirY, planeX, planeY);
         }
       }
