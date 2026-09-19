@@ -181,26 +181,14 @@
   }
 
   function floorVariantAt(txi, tyi) {
-    if (bloodAt(txi, tyi) &&
-        !bloodAt(txi - 1, tyi) && !bloodAt(txi + 1, tyi) &&
-        !bloodAt(txi, tyi - 1) && !bloodAt(txi, tyi + 1)) {
-      return 6 + (hashInt(txi, tyi, 0x0B2) % 3);
-    }
-    if ((hashInt(txi, tyi, 0x0DA9) % 10000) < 44) {
+    if ((hashInt(txi, tyi, 0x0DA9) % 10000) < 70) {
       return 4 + (hashInt(txi, tyi, 0x0D2) % 2);
     }
     return hashInt(txi, tyi, 0x0F11) & 3;
   }
 
-  function wallBloodBase(wx, wy) {
-    return (hashInt(wx, wy, 0x0B100E) % 1000) < 4;
-  }
-
-  function wallBloodVariantAt(wx, wy) {
-    if (!wallBloodBase(wx, wy)) return 0;
-    if (wallBloodBase(wx - 1, wy) || wallBloodBase(wx + 1, wy) ||
-        wallBloodBase(wx, wy - 1) || wallBloodBase(wx, wy + 1)) return 0;
-    return 1 + (hashInt(wx, wy, 0x0B3) % 3);
+  function wallBloodVariantAt() {
+    return 0;
   }
 
   // ---------- textures ----------
@@ -310,7 +298,7 @@
     var f = 1 + grain * 0.1 + mott * 0.15;
     if (y < 3) f *= 0.94;
     if (y > WALL_TEX_H - 4) f *= 0.9;
-    return [byte(133 * f), byte(131 * f), byte(122 * f), 255];
+    return [byte(172 * f), byte(161 * f), byte(118 * f), 255];
   }
 
   function paintCeiling(x, y) {
@@ -322,13 +310,13 @@
     var r, g, b;
     var isLamp = tx === 0 && ty === 0;
     if (gx === 0 || gy === 0) {
-      r = 158; g = 158; b = 146;
+      r = 168; g = 161; b = 126;
     } else if (isLamp && gx >= 3 && gx <= tile - 4 && gy >= 3 && gy <= tile - 4) {
-      r = 252; g = 252; b = 234;
+      r = 252; g = 248; b = 220;
     } else if (isLamp) {
-      r = 224; g = 224; b = 208;
+      r = 230; g = 224; b = 188;
     } else {
-      r = 200; g = 198; b = 182;
+      r = 208; g = 200; b = 158;
     }
     var n = hash2(x, y, 7);
     var f = 1 + (n - 0.5) * 0.05;
@@ -623,6 +611,7 @@
       this.screen = new Uint32Array(RW * RH);
       this.prev = new Uint32Array(RW * RH);
       this.zBuf = new Float32Array(RW);
+      this.dbuf = new Float32Array(RW * RH);
 
       this.texWall = makeTexture(WALL_TEX_W, WALL_TEX_H, paintWallpaper);
       this.texConcrete = makeTexture(WALL_TEX_W, WALL_TEX_H, paintConcrete);
@@ -651,9 +640,6 @@
       }
       for (var dv = 0; dv < 2; dv++) {
         this.floorTables.push(buildShades(makeTexture(TEX, TEX, makeDampPainter(dv)), 0.28));
-      }
-      for (var bv = 0; bv < 3; bv++) {
-        this.floorTables.push(buildShades(makeTexture(TEX, TEX, makeBloodPainter(bv)), 0.28));
       }
 
       this.noise = new Uint8Array(65536);
@@ -686,6 +672,7 @@
       this.tcH = new Uint8Array(32768);
       this.tcS = new Uint8Array(32768);
       this.tcL = new Uint8Array(32768);
+      this.tcF = new Uint8Array(32768);
       this.tcX.fill(0x7fffffff);
       this.tcY.fill(0x7fffffff);
 
@@ -817,12 +804,12 @@
       var dx = Math.floor(cx / DISTRICT_CHUNKS);
       var dy = Math.floor(cy / DISTRICT_CHUNKS);
       var seed = this.worldSeed >>> 0;
-      if ((hashInt(dx, dy, seed ^ 0x9E37) % 100) < 6) return 5;
+      if ((hashInt(dx, dy, seed ^ 0x9E37) % 100) < 7) return 5;
       var v = hashInt(dx + 7, dy - 3, seed ^ 0x1F3D) % 100;
-      if (v < 30) return 0;
-      if (v < 54) return 1;
-      if (v < 72) return 2;
-      if (v < 90) return 3;
+      if (v < 28) return 0;
+      if (v < 50) return 1;
+      if (v < 68) return 2;
+      if (v < 86) return 3;
       return 4;
     }
 
@@ -833,30 +820,31 @@
       var theme = this.themeFor(cx, cy);
       var i, x, y;
 
-      if (theme === 1) {
+      if (theme === 0) {
         carveRect(tiles, 1, 1, C - 2, C - 2, 0);
-        var pstep = rng() < 0.5 ? 4 : 5;
-        var psz = rng() < 0.5 ? 1 : 2;
-        for (y = 2; y < C - 2; y += pstep) {
-          for (x = 2; x < C - 2; x += pstep) {
-            carveRect(tiles, x, y, psz, psz, 2);
+        for (y = 3; y < C - 2; y += 6) {
+          for (x = 3; x < C - 2; x += 6) {
+            carveRect(tiles, x, y, 2, 2, 1);
+          }
+        }
+      } else if (theme === 1) {
+        carveRect(tiles, 1, 1, C - 2, C - 2, 0);
+        for (y = 2; y < C - 2; y += 4) {
+          for (x = 2; x < C - 2; x += 4) {
+            carveRect(tiles, x, y, 1, 1, 1);
           }
         }
       } else if (theme === 2) {
         carveRect(tiles, 1, 1, C - 2, C - 2, 1);
-        for (y = 2; y < C - 1; y += 4) carveRect(tiles, 1, y, C - 2, 2, 0);
-        for (x = 3; x < C - 1; x += 3 + ((rng() * 4) | 0)) carveRect(tiles, x, 1, 2, C - 2, 0);
+        for (y = 2; y < C - 1; y += 5) carveRect(tiles, 1, y, C - 2, 3, 0);
+        for (x = 3; x < C - 1; x += 6) carveRect(tiles, x, 1, 2, C - 2, 0);
       } else if (theme === 3) {
         carveRect(tiles, 1, 1, C - 2, C - 2, 1);
-        for (var ry = 1; ry < C - 2; ry += 3) {
-          for (var rx = 1; rx < C - 2; rx += 3) {
-            carveRect(tiles, rx, ry, 2, 2, 0);
-          }
-        }
-        for (var dy2 = 1; dy2 < C - 2; dy2 += 3) {
-          for (var dx2 = 1; dx2 < C - 2; dx2 += 3) {
-            if (rng() < 0.6 && dx2 + 2 < C - 1) tiles[dy2 * C + (dx2 + 2)] = 0;
-            if (rng() < 0.6 && dy2 + 2 < C - 1) tiles[(dy2 + 2) * C + dx2] = 0;
+        for (var ry = 2; ry < C - 3; ry += 5) {
+          for (var rx = 2; rx < C - 3; rx += 5) {
+            carveRect(tiles, rx, ry, 3, 3, 0);
+            if (rng() < 0.78 && rx + 3 < C - 1) tiles[(ry + 1) * C + (rx + 3)] = 0;
+            if (rng() < 0.78 && ry + 3 < C - 1) tiles[(ry + 3) * C + (rx + 1)] = 0;
           }
         }
       } else if (theme === 4) {
@@ -870,39 +858,20 @@
         }
       } else if (theme === 5) {
         carveRect(tiles, 1, 1, C - 2, C - 2, 0);
-        for (y = 3; y < C - 2; y += 6) {
-          for (x = 3; x < C - 2; x += 6) {
-            carveRect(tiles, x, y, 2, 2, 2);
+        for (y = 3; y < C - 2; y += 5) {
+          for (x = 3; x < C - 2; x += 5) {
+            carveRect(tiles, x, y, 2, 2, 1);
           }
         }
       } else {
-        var rooms = [];
-        var target = 3 + ((rng() * 4) | 0);
-        var attempts = 0;
-        while (rooms.length < target && attempts < 80) {
-          attempts++;
-          var w = 4 + ((rng() * 6) | 0);
-          var h = 4 + ((rng() * 6) | 0);
-          x = 1 + ((rng() * Math.max(1, C - w - 2)) | 0);
-          y = 1 + ((rng() * Math.max(1, C - h - 2)) | 0);
-          if (x + w > C - 1) x = C - 1 - w;
-          if (y + h > C - 1) y = C - 1 - h;
-          if (x < 1) x = 1;
-          if (y < 1) y = 1;
-          carveRect(tiles, x, y, w, h, 0);
-          rooms.push({ cx: x + (w >> 1), cy: y + (h >> 1) });
-        }
-        if (!rooms.length) carveRect(tiles, 2, 2, C - 4, C - 4, 0);
-        for (i = 1; i < rooms.length; i++) {
-          connectCells(tiles, rooms[i - 1].cx, rooms[i - 1].cy, rooms[i].cx, rooms[i].cy);
-        }
+        carveRect(tiles, 2, 2, C - 4, C - 4, 0);
       }
 
-      var extra = (rng() * 6) | 0;
+      var extra = (rng() * 5) | 0;
       for (i = 0; i < extra; i++) {
         var ex2 = 2 + ((rng() * (C - 4)) | 0);
         var ey2 = 2 + ((rng() * (C - 4)) | 0);
-        if (tiles[ey2 * C + ex2] === 0) tiles[ey2 * C + ex2] = 2;
+        if (tiles[ey2 * C + ex2] === 0) tiles[ey2 * C + ex2] = 1;
       }
 
       var edges = [];
@@ -968,7 +937,7 @@
                 var ay = wy + oy2;
                 if (ax < 0 || ay < 0 || ax >= C || ay >= C) continue;
                 var tv = tiles[ay * C + ax];
-                if (tv === 1 || tv === HOLE_TILE) tiles[ay * C + ax] = 2;
+                if (tv === 1 || tv === HOLE_TILE) tiles[ay * C + ax] = 1;
               }
             }
             stair = { ex: wx, ey: wy, dx: -dirs[d2][0], dy: -dirs[d2][1] };
@@ -1479,9 +1448,8 @@
       if (dt > 0.1) dt = 0.1;
       if (dt <= 0) dt = 0.0001;
       this.update(dt);
-      if (this.descending || this.fadingOut) {
-        if (this.descendMode === 'fall') this.renderFall();
-        else this.renderStairs();
+      if (this.descendMode === 'fall' && (this.descending || this.fadingOut)) {
+        this.renderFall();
       } else {
         this.render();
       }
@@ -1631,15 +1599,17 @@
     }
 
     startDescent() {
-      this.descending = true;
       this.descendMode = 'stairs';
       this.endKind = 'win';
-      this.stairK = 0;
-      this.stairS = 0;
-      this.stairEye = EYE_ABOVE;
-      this.cutDark = 0.85;
+      this.descending = false;
+      this.fadingOut = true;
+      this.fade = 0;
+      this.cutDark = 0.25;
       this.keys = {};
-      if (this.audio) this.audio.buzz(0);
+      if (this.audio) {
+        this.audio.buzz(0);
+        this.audio.ending();
+      }
       this.setStatus('Schodzisz w dół...');
       this.setHint('', false);
     }
@@ -1772,6 +1742,9 @@
 
       this.updateLevels();
 
+      var dbuf = this.dbuf;
+      dbuf.fill(1e9);
+
       var wallShades = this.wallShades;
       var wallBloodShades = this.wallBloodShades;
       var concreteShades = this.concreteShades;
@@ -1791,6 +1764,7 @@
       var tcH = this.tcH;
       var tcS = this.tcS;
       var tcL = this.tcL;
+      var tcF = this.tcF;
       var dcX = this.dcX;
       var dcY = this.dcY;
       var dcV = this.dcV;
@@ -1919,6 +1893,7 @@
           if (ceilLvl < 0) ceilLvl = 0;
           else if (ceilLvl > topLevel) ceilLvl = topLevel;
           buf[cy * RW + x] = ceilShades[ceilLvl][tyC * CEIL_TEX + txC];
+          dbuf[cy * RW + x] = rowDistC;
         }
 
         var ws = drawStart < 0 ? 0 : Math.ceil(drawStart);
@@ -1932,6 +1907,7 @@
             if (texY < 0) texY = 0;
             else if (texY >= WALL_TEX_H) texY = WALL_TEX_H - 1;
             buf[wy * RW + x] = shading[texY * WALL_TEX_W + texX];
+            dbuf[wy * RW + x] = perp;
             texPosY += texStepY;
           }
         }
@@ -1956,65 +1932,33 @@
             tcV[slot] = floorVariantAt(txi, tyi);
             tcD[slot] = (darkFieldAt(fxF, fyF) * 255) | 0;
             tcL[slot] = (lampLightAt(fxF, fyF) * 255) | 0;
+            tcF[slot] = 0;
+            tcH[slot] = 0;
+            tcS[slot] = 0;
+          }
+          if (tcF[slot] !== 2 && rowDistF < MAXDIST + 3) {
+            var ftile = this.tileAt(fxF, fyF);
             var fh = 0;
             var fs = 0;
-            if (rowDistF < MAXDIST + 3) {
-              var ftile = this.tileAt(fxF, fyF);
-              if (ftile === HOLE_TILE) fh = 1;
-              else if (ftile === 5) {
-                if (this.tileAt(lxi - 1, lyi) === 0) fs = 1;
-                else if (this.tileAt(lxi + 1, lyi) === 0) fs = 2;
-                else if (this.tileAt(lxi, lyi - 1) === 0) fs = 3;
-                else if (this.tileAt(lxi, lyi + 1) === 0) fs = 4;
-                else fs = 3;
-              }
+            if (ftile === HOLE_TILE) fh = 1;
+            else if (ftile === 5) {
+              if (this.tileAt(lxi - 1, lyi) === 0) fs = 1;
+              else if (this.tileAt(lxi + 1, lyi) === 0) fs = 2;
+              else if (this.tileAt(lxi, lyi - 1) === 0) fs = 3;
+              else if (this.tileAt(lxi, lyi + 1) === 0) fs = 4;
+              else fs = 3;
             }
             tcH[slot] = fh;
             tcS[slot] = fs;
+            tcF[slot] = 2;
           }
           var fdk = tcD[slot] / 255;
 
           var fi = (rowDistF * LSCALE) | 0;
           if (fi > 128) fi = 128;
 
-          if (tcS[slot]) {
-            var sex = fxF - lxi;
-            var sey = fyF - lyi;
-            var orient = tcS[slot];
-            var sPos;
-            if (orient === 1) sPos = sex;
-            else if (orient === 2) sPos = 1 - sex;
-            else if (orient === 3) sPos = sey;
-            else sPos = 1 - sey;
-            if (sPos < 0) sPos = 0;
-            else if (sPos > 0.999) sPos = 0.999;
-            var kstep = (sPos * STAIR_SLOTS) | 0;
-            var frac = sPos * STAIR_SLOTS - kstep;
-            var edge = Math.min(sex, 1 - sex, sey, 1 - sey);
-            var sbase;
-            if (edge < 0.13) {
-              sbase = 42;
-            } else if (frac < 0.34) {
-              sbase = 74 - kstep * 9;
-            } else {
-              sbase = 120 - kstep * 12;
-              if (frac < 0.44) sbase += 42;
-            }
-            var slit = 0.6 + 0.4 * lampDist[fi];
-            var sdk = 1 - fdk * 0.65;
-            var sv = sbase * slit * sdk;
-            buf[fy2 * RW + x] = pack(sv * 1.06, sv, sv * 0.92);
-          } else if (tcH[slot]) {
-            var hex = fxF - lxi;
-            var hey = fyF - lyi;
-            var hedge = Math.min(hex, 1 - hex, hey, 1 - hey);
-            var rim = hedge * 2.4;
-            if (rim > 1) rim = 1;
-            var hbase = 5 + 32 * rim * rim;
-            var hlit = 0.5 + 0.5 * lampDist[fi];
-            var hdk = 1 - fdk * 0.6;
-            var hv = hbase * hlit * hdk;
-            buf[fy2 * RW + x] = pack(hv * 1.05, hv, hv * 0.9);
+          if (tcS[slot] || tcH[slot]) {
+            buf[fy2 * RW + x] = pack(7, 7, 6);
           } else {
             var ao = (perp - rowDistF) / 1.6;
             if (ao > 1) ao = 1;
@@ -2031,7 +1975,209 @@
             var txF = Math.floor(fxF * FLOOR_PPC) & (TEX - 1);
             var tyF = Math.floor(fyF * FLOOR_PPC) & (TEX - 1);
             buf[fy2 * RW + x] = floorTables[tcV[slot]][fl][tyF * TEX + txF];
+            dbuf[fy2 * RW + x] = rowDistF;
           }
+        }
+      }
+
+      this.renderShafts3D(dirX, dirY, planeX, planeY, camZ, horizon, topLevel);
+    }
+
+    // ---------- render: 3D stairs / pits ----------
+
+    _tileTRange(px, py, rdx, rdy, tx, ty) {
+      var t0 = 0.12;
+      var t1 = 60;
+      if (Math.abs(rdx) < 1e-6) {
+        if (px < tx || px > tx + 1) return null;
+      } else {
+        var a = (tx - px) / rdx;
+        var b = (tx + 1 - px) / rdx;
+        if (a > b) { var tmp = a; a = b; b = tmp; }
+        if (a > t0) t0 = a;
+        if (b < t1) t1 = b;
+      }
+      if (Math.abs(rdy) < 1e-6) {
+        if (py < ty || py > ty + 1) return null;
+      } else {
+        var c = (ty - py) / rdy;
+        var d = (ty + 1 - py) / rdy;
+        if (c > d) { var tm = c; c = d; d = tm; }
+        if (c > t0) t0 = c;
+        if (d < t1) t1 = d;
+      }
+      if (t1 <= t0) return null;
+      return [t0, t1];
+    }
+
+    _orientAt(tx, ty) {
+      if (this.tileAt(tx - 1, ty + 0.5) === 0) return 1;
+      if (this.tileAt(tx + 1, ty + 0.5) === 0) return 2;
+      if (this.tileAt(tx + 0.5, ty - 1) === 0) return 3;
+      if (this.tileAt(tx + 0.5, ty + 1) === 0) return 4;
+      return 3;
+    }
+
+    _tread(tx, ty, orient, z, u0, u1, cr, cg, cb, camZ, horizon, dirX, dirY, planeX, planeY) {
+      var buf = this.screen;
+      var dbuf = this.dbuf;
+      var px = this.px;
+      var py = this.py;
+      var k = (camZ - z) * RH;
+      if (k <= 0) return;
+      for (var sx = 0; sx < RW; sx++) {
+        var cameraX = 2 * sx / RW - 1;
+        var rdx = dirX + planeX * cameraX;
+        var rdy = dirY + planeY * cameraX;
+        var range = this._tileTRange(px, py, rdx, rdy, tx, ty);
+        if (!range) continue;
+        var yHi = horizon + k / range[0];
+        var yLo = horizon + k / range[1];
+        var yStart = Math.ceil(yLo);
+        if (yStart < horizon + 1) yStart = horizon + 1;
+        if (yStart < 0) yStart = 0;
+        var yEnd = Math.ceil(yHi);
+        if (yEnd > RH) yEnd = RH;
+        for (var y = yStart; y < yEnd; y++) {
+          var t = k / (y - horizon);
+          if (t < range[0] || t > range[1]) continue;
+          var idx = y * RW + sx;
+          if (t >= dbuf[idx]) continue;
+          var wx = px + t * rdx;
+          var wy = py + t * rdy;
+          var u, v;
+          if (orient === 1) { u = wx - tx; v = wy - ty; }
+          else if (orient === 2) { u = tx + 1 - wx; v = wy - ty; }
+          else if (orient === 3) { u = wy - ty; v = wx - tx; }
+          else { u = ty + 1 - wy; v = wx - tx; }
+          if (u < u0 || u > u1 || v < 0 || v > 1) continue;
+          var lit = 0.5 + 0.5 * (1 - t / MAXDIST) + lampLightAt(wx, wy) * 0.45;
+          buf[idx] = pack(cr * lit, cg * lit, cb * lit);
+          dbuf[idx] = t;
+        }
+      }
+    }
+
+    _vplane(axis, coord, v0, v1, z0, z1, cr, cg, cb, fadeDepth, camZ, horizon, dirX, dirY, planeX, planeY) {
+      var buf = this.screen;
+      var dbuf = this.dbuf;
+      var px = this.px;
+      var py = this.py;
+      for (var sx = 0; sx < RW; sx++) {
+        var cameraX = 2 * sx / RW - 1;
+        var rdx = dirX + planeX * cameraX;
+        var rdy = dirY + planeY * cameraX;
+        var t;
+        if (axis === 0) {
+          if (Math.abs(rdx) < 1e-6) continue;
+          t = (coord - px) / rdx;
+          if (t < 0.08) continue;
+          var lat = py + t * rdy;
+          if (lat < v0 || lat > v1) continue;
+        } else {
+          if (Math.abs(rdy) < 1e-6) continue;
+          t = (coord - py) / rdy;
+          if (t < 0.08) continue;
+          var lat2 = px + t * rdx;
+          if (lat2 < v0 || lat2 > v1) continue;
+        }
+        var yA = Math.ceil(horizon + (camZ - z1) * RH / t);
+        var yB = Math.ceil(horizon + (camZ - z0) * RH / t);
+        if (yA < 0) yA = 0;
+        if (yB > RH) yB = RH;
+        var base = 0.55 + 0.45 * (1 - t / MAXDIST);
+        for (var y = yA; y < yB; y++) {
+          var idx = y * RW + sx;
+          if (t >= dbuf[idx]) continue;
+          var sh = base;
+          if (fadeDepth > 0) {
+            var z = camZ - (y - horizon) * t / RH;
+            var fz = 1 + z / fadeDepth;
+            if (fz < 0) fz = 0;
+            else if (fz > 1) fz = 1;
+            sh *= fz;
+          }
+          buf[idx] = pack(cr * sh, cg * sh, cb * sh);
+          dbuf[idx] = t;
+        }
+      }
+    }
+
+    renderStairTile(tx, ty, camZ, horizon, dirX, dirY, planeX, planeY) {
+      var orient = this._orientAt(tx, ty);
+      var N = 6;
+      var stepH = 0.24;
+      var depth = N * stepH;
+      var treadC = [158, 148, 112];
+      var riserC = [104, 97, 74];
+      var sideC = [130, 122, 95];
+      var farC = [120, 113, 88];
+      var i;
+
+      for (i = 0; i < N; i++) {
+        this._tread(tx, ty, orient, -(i + 1) * stepH, i / N, (i + 1) / N,
+          treadC[0], treadC[1], treadC[2], camZ, horizon, dirX, dirY, planeX, planeY);
+      }
+
+      for (i = 0; i < N; i++) {
+        var uk = i / N;
+        var z0 = -(i + 1) * stepH;
+        var z1 = -i * stepH;
+        if (orient === 1) this._vplane(0, tx + uk, ty, ty + 1, z0, z1, riserC[0], riserC[1], riserC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+        else if (orient === 2) this._vplane(0, tx + 1 - uk, ty, ty + 1, z0, z1, riserC[0], riserC[1], riserC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+        else if (orient === 3) this._vplane(1, ty + uk, tx, tx + 1, z0, z1, riserC[0], riserC[1], riserC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+        else this._vplane(1, ty + 1 - uk, tx, tx + 1, z0, z1, riserC[0], riserC[1], riserC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+      }
+
+      if (orient === 1 || orient === 2) {
+        this._vplane(1, ty, tx, tx + 1, -depth, 0, sideC[0], sideC[1], sideC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+        this._vplane(1, ty + 1, tx, tx + 1, -depth, 0, sideC[0], sideC[1], sideC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+        var fx = orient === 1 ? tx + 1 : tx;
+        this._vplane(0, fx, ty, ty + 1, -depth, 0, farC[0], farC[1], farC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+      } else {
+        this._vplane(0, tx, ty, ty + 1, -depth, 0, sideC[0], sideC[1], sideC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+        this._vplane(0, tx + 1, ty, ty + 1, -depth, 0, sideC[0], sideC[1], sideC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+        var fy = orient === 3 ? ty + 1 : ty;
+        this._vplane(1, fy, tx, tx + 1, -depth, 0, farC[0], farC[1], farC[2], 0, camZ, horizon, dirX, dirY, planeX, planeY);
+      }
+    }
+
+    renderPitTile(tx, ty, camZ, horizon, dirX, dirY, planeX, planeY) {
+      var col = [146, 136, 104];
+      var depth = 3.4;
+      this._vplane(0, tx, ty, ty + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      this._vplane(0, tx + 1, ty, ty + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      this._vplane(1, ty, tx, tx + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      this._vplane(1, ty + 1, tx, tx + 1, -depth, 0, col[0], col[1], col[2], depth, camZ, horizon, dirX, dirY, planeX, planeY);
+    }
+
+    renderShafts3D(dirX, dirY, planeX, planeY, camZ, horizon, topLevel) {
+      var i;
+      var exits = this.exitsNear;
+      for (i = 0; i < exits.length; i++) {
+        var e = exits[i];
+        var dx = (e.cx + 0.5) - this.px;
+        var dy = (e.cy + 0.5) - this.py;
+        var fd = dx * dirX + dy * dirY;
+        if (fd < 0.3 || fd > 18) continue;
+        var lat = -dx * dirY + dy * dirX;
+        if (Math.abs(lat) > fd * (0.9 + FOV) + 1.6) continue;
+        this.renderStairTile(e.cx, e.cy, camZ, horizon, dirX, dirY, planeX, planeY);
+      }
+
+      var ptx = Math.floor(this.px);
+      var pty = Math.floor(this.py);
+      var pr = 5;
+      for (var oy = -pr; oy <= pr; oy++) {
+        for (var ox = -pr; ox <= pr; ox++) {
+          var tx = ptx + ox;
+          var ty = pty + oy;
+          if (this.tileAt(tx + 0.5, ty + 0.5) !== HOLE_TILE) continue;
+          var hx = tx + 0.5 - this.px;
+          var hy = ty + 0.5 - this.py;
+          var hd = hx * dirX + hy * dirY;
+          if (hd < 0.25 || hd > 10) continue;
+          this.renderPitTile(tx, ty, camZ, horizon, dirX, dirY, planeX, planeY);
         }
       }
     }

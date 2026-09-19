@@ -4,6 +4,12 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 
 ## 2026-09-20
 
+### Backrooms — kolory, prawdziwe 3D schody, pokoje jak na zdjęciach
+- Ujednolicona paleta bez szarych bloków: podłoga, ściany, sufit, filary i wnętrza dziur w ciepłej żółto-beżowej tonacji. Usunięte czerwone warianty podłogi i szare linie.
+- Schody renderowane jako prawdziwa geometria 3D: stopnie, podstopnie i ściany szybu rzutowane z buforem głębi. Są widoczne od razu, z każdej odległości i kąta. Wejście na schody to płynne przejście (zaciemnienie) i ekran wygranej.
+- Dziury w podłodze renderowane jako 3D szyby z bocznymi ścianami; nadal nieskończenie głębokie (spadek = przegrana po 30 kaflach).
+- Pokoje wzorowane na zdjęciach: hale z siatką filarów (rzadką i gęstą), długie korytarze, labirynt pokoi z przejściami, sala z dziurami oraz rzadkie wielkie hale.
+
 ### Backrooms — duże poprawki silnika
 - Wysokość ścian zmieniona na **5 kafli** (`WALL_TILES_H = 5`).
 - Usunięte linie na kafelkach ścian: cienkie paski, szwy co kafel oraz pasy diagonalne; została gładka, lekko marmurkowata faktura.
