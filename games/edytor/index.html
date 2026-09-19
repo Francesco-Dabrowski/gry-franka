@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edytor struktur — Zbiórka Franka Gry</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/games.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../../index.html">
+      <span class="brand__logo" data-pixel-icon="palette" data-pixel-size="16"></span>
+      <span>Edytor struktur <em>Narzędzia</em></span>
+    </a>
+    <nav class="site-nav">
+      <a class="btn btn--ghost" href="../../index.html">← Menu</a>
+    </nav>
+  </header>
+
+  <main class="editor">
+    <div class="editor__toolbar">
+      <span class="editor__group">
+        <span class="editor__label">Narzędzie</span>
+        <button class="btn tool-btn is-active" data-tool="pencil" type="button">Ołówek</button>
+        <button class="btn tool-btn" data-tool="fill" type="button">Wypełnij</button>
+        <button class="btn tool-btn" data-tool="eraser" type="button">Gumka</button>
+      </span>
+
+      <span class="editor__group">
+        <span class="editor__label">Kolor</span>
+        <button class="swatch is-active" data-color="1" type="button" title="Ściana"><i style="background:#8a7a52"></i></button>
+        <button class="swatch" data-color="0" type="button" title="Podłoga"><i style="background:#e8dcb0"></i></button>
+        <button class="swatch" data-color="x" type="button" title="Dziura"><i style="background:#1b1b52"></i></button>
+        <button class="swatch" data-color="." type="button" title="Puste"><i style="background:#000000;border-color:#fff"></i></button>
+      </span>
+
+      <span class="editor__group">
+        <span class="editor__label">Rozmiar tile'a</span>
+        <button class="btn size-btn" data-size="50" type="button">50</button>
+        <button class="btn size-btn" data-size="100" type="button">100</button>
+        <input class="input editor__custom" id="custom-size" type="number" min="8" max="200" step="2" placeholder="custom" />
+        <button class="btn" id="apply-size" type="button">Ustaw</button>
+      </span>
+    </div>
+
+    <div class="editor__body">
+      <aside class="editor__catalog">
+        <div class="editor__catalog-head">Katalog struktur</div>
+        <div class="editor__list" id="catalog"></div>
+        <div class="editor__catalog-actions">
+          <button class="btn btn--block" id="btn-new" type="button">Nowa struktura</button>
+          <button class="btn btn--block" id="btn-rename" type="button">Zmień nazwę</button>
+          <button class="btn btn--block" id="btn-duplicate" type="button">Duplikuj</button>
+          <button class="btn btn--block" id="btn-delete" type="button">Usuń</button>
+        </div>
+      </aside>
+
+      <section class="editor__stage">
+        <div class="editor__canvas-wrap" id="canvas-wrap">
+          <canvas id="grid" class="editor__canvas"></canvas>
+          <div class="editor__cursor" id="cursor"></div>
+        </div>
+        <div class="editor__hint" id="hint">Kliknij/maluj jak w Paincie. Prawy przycisk = gumka. Każdy piksel = 3×3 małe tile.</div>
+      </section>
+
+      <aside class="editor__code">
+        <div class="editor__catalog-head">Kod struktury</div>
+        <textarea class="editor__code-area" id="code" readonly></textarea>
+        <button class="btn btn--primary btn--block" id="btn-copy" type="button">Kopiuj kod</button>
+        <button class="btn btn--block" id="btn-copy-json" type="button">Kopiuj JSON</button>
+        <div class="editor__hint" id="legend">
+          <b>Legenda:</b><br>
+          <i class="chip" style="background:#8a7a52"></i> 1 = ściana (ciemnobeżowy)<br>
+          <i class="chip" style="background:#e8dcb0"></i> 0 = podłoga (jasnobeżowy)<br>
+          <i class="chip" style="background:#1b1b52"></i> x = dziura (granatowy)<br>
+          <i class="chip" style="background:#000;border-color:#fff"></i> . = puste (czarne, poza strukturą)
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="../../js/core/game.js"></script>
+  <script src="../../js/core/storage.js"></script>
+  <script src="../../js/core/icons.js"></script>
+  <script src="../../js/apps/editor.js"></script>
+  <script>
+    ZFG.editor.init();
+  </script>
+</body>
+</html>

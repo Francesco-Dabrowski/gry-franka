@@ -98,6 +98,24 @@
       set(ctx, '#3a382e', 7, 5, 2, 1);
     },
 
+    palette: function (ctx) {
+      var cx = 7.5;
+      var cy = 8.5;
+      for (var y = 0; y < 16; y++) {
+        for (var x = 0; x < 16; x++) {
+          var dx = (x - cx) / 6.7;
+          var dy = (y - cy) / 5.3;
+          var d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 1) set(ctx, '#d8b483', x, y);
+          else if (d < 1.16) set(ctx, '#6b4a24', x, y);
+        }
+      }
+      set(ctx, '#000000', 3, 9, 3, 3);
+      set(ctx, '#8a7a52', 4, 3, 2, 2);
+      set(ctx, '#e8dcb0', 8, 2, 2, 2);
+      set(ctx, '#1b1b52', 10, 6, 2, 2);
+    },
+
     computer: function (ctx) {
       set(ctx, '#404040', 1, 2, 14, 9);
       set(ctx, '#008080', 2, 3, 12, 7);

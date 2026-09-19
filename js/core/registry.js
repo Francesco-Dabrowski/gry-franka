@@ -37,6 +37,15 @@
       url: 'games/backrooms/',
       tag: 'Horror 3D',
       desc: 'Lo-fi FPS. Nieskończone backroomsy — błąkaj się i znajdź schody w dół.'
+    },
+    {
+      id: 'edytor',
+      name: 'Edytor struktur',
+      icon: 'palette',
+      type: 'solo',
+      url: 'games/edytor/',
+      tag: 'Narzędzie',
+      desc: 'Maluj struktury do Backrooms jak w Paint i kopiuj kod.'
     }
   ];
 

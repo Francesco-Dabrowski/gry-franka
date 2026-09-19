@@ -4,6 +4,14 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 
 ## 2026-09-20
 
+### Edytor struktur (nowy program w menu)
+- Program „Edytor struktur" w menu gier: biała siatka na czarnych pikselach, każdy piksel = pole 3×3 małe tile.
+- Malu­nie jak w starym Paintcie: kolory oznaczają typ — ciemnobeżowy = ściana (`1`), jasnobeżowy = podłoga (`0`), granatowy = dziura (`x`), czarny = puste (poza strukturą, `.`).
+- Narzędzia: Ołówek, Wypełnij (flood fill), Gumka; prawy przycisk = gumka.
+- Katalog struktur: nowa, zmiana nazwy, duplikowanie, usuwanie; zapis w `localStorage`.
+- Parametr rozmiaru wyświetlanego tile'a: 50, 100 lub custom (8–200 px).
+- Każda struktura generuje kod (`ZFG-STRUKTURA v1`, znaki `. 0 1 x`) oraz JSON do skopiowania — do późniejszego przetworzenia na realne struktury Backrooms.
+
 ### Backrooms — kamera (pitch), 3D otchłań, wolniejsza stamina, system wzorów
 - Rozglądanie w pionie: **strzałki w górę/w dół** oraz **mysz w pionie** (y-shear rzutowania; pitch ograniczony).
 - Nieskończona otchłań renderowana w 3D — spadanie to prawdziwy zjazd kamery w dół szybu (4 ściany w perspektywie, głębokość 44), zamiast ekranowej animacji 2D.
