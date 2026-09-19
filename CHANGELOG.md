@@ -10,6 +10,7 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 - Narzędzia: Ołówek, Wypełnij (flood fill), Gumka; prawy przycisk = gumka.
 - Katalog struktur: nowa, zmiana nazwy, duplikowanie, usuwanie; zapis w `localStorage`.
 - Parametr rozmiaru wyświetlanego tile'a: 50, 100 lub custom (8–200 px).
+- Powiększanie/pomniejszanie mapy: przyciski − / + / Reset, `Ctrl` + kółko myszy, skróty `+`/`-`/`0`. Poziom zoomu pokazywany w procentach i zapisywany.
 - Każda struktura generuje kod (`ZFG-STRUKTURA v1`, znaki `. 0 1 x`) oraz JSON do skopiowania — do późniejszego przetworzenia na realne struktury Backrooms.
 
 ### Backrooms — kamera (pitch), 3D otchłań, wolniejsza stamina, system wzorów

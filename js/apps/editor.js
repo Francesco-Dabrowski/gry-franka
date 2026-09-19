@@ -170,6 +170,7 @@
     tool: 'pencil',
     color: '1',
     cellSize: 50,
+    zoom: 1,
     painting: false,
     saveTimer: null,
 
@@ -197,6 +198,7 @@
       this.renderCatalog();
       this.select(this.currentId);
       this.syncSizeButtons();
+      this.updateZoomLabel();
     },
 
     load: function () {
@@ -212,6 +214,7 @@
           });
           this.currentId = data.currentId || null;
           if (data.cellSize) this.cellSize = data.cellSize;
+          if (data.zoom) this.zoom = data.zoom;
         }
       } catch (err) {
         this.structures = [];
@@ -225,6 +228,7 @@
         try {
           var payload = {
             cellSize: self.cellSize,
+            zoom: self.zoom,
             currentId: self.currentId,
             structures: self.structures.map(function (s) {
               return { id: s.id, name: s.name, cols: s.cols, rows: s.rows, grid: s.grid.map(function (r) { return r.join(''); }) };
@@ -284,6 +288,30 @@
         });
       }
 
+      var zoomIn = document.getElementById('zoom-in');
+      var zoomOut = document.getElementById('zoom-out');
+      var zoomReset = document.getElementById('zoom-reset');
+      if (zoomIn) zoomIn.addEventListener('click', function () { self.setZoom(self.zoom * 1.25); });
+      if (zoomOut) zoomOut.addEventListener('click', function () { self.setZoom(self.zoom / 1.25); });
+      if (zoomReset) zoomReset.addEventListener('click', function () { self.setZoom(1); });
+
+      this.wrap.addEventListener('wheel', function (e) {
+        if (!e.ctrlKey && !e.metaKey) return;
+        e.preventDefault();
+        self.setZoom(self.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+      }, { passive: false });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === '=' || e.key === '+') { e.preventDefault(); self.setZoom(self.zoom * 1.25); }
+          else if (e.key === '-' || e.key === '_') { e.preventDefault(); self.setZoom(self.zoom / 1.25); }
+          else if (e.key === '0') { e.preventDefault(); self.setZoom(1); }
+          return;
+        }
+        if (e.key === '+' || e.key === '=') self.setZoom(self.zoom * 1.15);
+        else if (e.key === '-' || e.key === '_') self.setZoom(self.zoom / 1.15);
+      });
+
       document.getElementById('btn-new').addEventListener('click', function () { self.newStructure(); });
       document.getElementById('btn-rename').addEventListener('click', function () { self.renameStructure(); });
       document.getElementById('btn-duplicate').addEventListener('click', function () { self.duplicateStructure(); });
@@ -314,11 +342,28 @@
       if (custom && [50, 100].indexOf(this.cellSize) < 0) custom.value = this.cellSize;
     },
 
+    eff: function () {
+      return this.cellSize * this.zoom;
+    },
+
+    setZoom: function (z) {
+      this.zoom = Math.max(0.15, Math.min(6, z));
+      this.applyCanvasSize();
+      this.updateZoomLabel();
+      this.save();
+    },
+
+    updateZoomLabel: function () {
+      var label = document.getElementById('zoom-level');
+      if (label) label.textContent = Math.round(this.zoom * 100) + '%';
+    },
+
     applyCanvasSize: function () {
       var s = this.current();
       if (!s) return;
-      this.canvas.style.width = (s.cols * this.cellSize) + 'px';
-      this.canvas.style.height = (s.rows * this.cellSize) + 'px';
+      var e = this.eff();
+      this.canvas.style.width = (s.cols * e) + 'px';
+      this.canvas.style.height = (s.rows * e) + 'px';
     },
 
     renderCatalog: function () {
@@ -409,11 +454,12 @@
     moveCursor: function (x, y) {
       var s = this.current();
       if (!s) return;
+      var e = this.eff();
       this.cursor.classList.remove('hidden');
-      this.cursor.style.left = (x * this.cellSize) + 'px';
-      this.cursor.style.top = (y * this.cellSize) + 'px';
-      this.cursor.style.width = this.cellSize + 'px';
-      this.cursor.style.height = this.cellSize + 'px';
+      this.cursor.style.left = (x * e) + 'px';
+      this.cursor.style.top = (y * e) + 'px';
+      this.cursor.style.width = e + 'px';
+      this.cursor.style.height = e + 'px';
     },
 
     paint: function (x, y, event) {

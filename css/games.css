@@ -993,6 +993,12 @@
   width: 84px;
 }
 
+.editor__zoom {
+  min-width: 48px;
+  text-align: center;
+  font-weight: 700;
+}
+
 .editor__body {
   display: flex;
   align-items: flex-start;
