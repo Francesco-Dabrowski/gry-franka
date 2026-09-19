@@ -993,6 +993,16 @@
   width: 84px;
 }
 
+.editor__dim {
+  width: 66px;
+  text-align: center;
+}
+
+.editor__x {
+  font-weight: 700;
+  padding: 0 2px;
+}
+
 .editor__zoom {
   min-width: 48px;
   text-align: center;

@@ -4,6 +4,7 @@
   var KEY = 'zfg.structures.v1';
   var B = 16;
   var PAINT = { '.': '#000000', '0': '#e8dcb0', '1': '#8a7a52', 'x': '#1b1b52' };
+  var BASE_CELL = 24;
 
   var REPEAT_HINTS = {
     1: '1–10', 2: '2–15', 3: '5–25', 4: '10–40', 5: '20–60',
@@ -187,7 +188,6 @@
     currentId: null,
     tool: 'pencil',
     color: '1',
-    cellSize: 50,
     zoom: 1,
     painting: false,
     saveTimer: null,
@@ -217,7 +217,6 @@
       this.bind();
       this.renderCatalog();
       this.select(this.currentId);
-      this.syncSizeButtons();
       this.updateZoomLabel();
     },
 
@@ -235,7 +234,6 @@
             return s;
           });
           this.currentId = data.currentId || null;
-          if (data.cellSize) this.cellSize = data.cellSize;
           if (data.zoom) this.zoom = data.zoom;
         }
       } catch (err) {
@@ -249,7 +247,6 @@
       this.saveTimer = setTimeout(function () {
         try {
           var payload = {
-            cellSize: self.cellSize,
             zoom: self.zoom,
             currentId: self.currentId,
             structures: self.structures.map(function (s) {
@@ -299,20 +296,16 @@
         });
       });
 
-      document.querySelectorAll('.size-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          self.setCellSize(parseInt(btn.getAttribute('data-size'), 10));
+      var applyStruct = document.getElementById('apply-struct-size');
+      if (applyStruct) {
+        applyStruct.addEventListener('click', function () { self.applyStructSize(); });
+      }
+      ['struct-cols', 'struct-rows'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') self.applyStructSize();
         });
       });
-
-      var applySize = document.getElementById('apply-size');
-      var custom = document.getElementById('custom-size');
-      if (applySize && custom) {
-        applySize.addEventListener('click', function () {
-          var v = parseInt(custom.value, 10);
-          if (v >= 8 && v <= 200) self.setCellSize(v);
-        });
-      }
 
       var zoomIn = document.getElementById('zoom-in');
       var zoomOut = document.getElementById('zoom-out');
@@ -375,24 +368,39 @@
       window.addEventListener('pointerup', function () { self.painting = false; });
     },
 
-    setCellSize: function (size) {
-      this.cellSize = size;
-      this.syncSizeButtons();
+    syncStructSize: function () {
+      var s = this.current();
+      if (!s) return;
+      var cols = document.getElementById('struct-cols');
+      var rows = document.getElementById('struct-rows');
+      if (cols) cols.value = s.cols;
+      if (rows) rows.value = s.rows;
+    },
+
+    applyStructSize: function () {
+      var s = this.current();
+      if (!s) return;
+      var colsEl = document.getElementById('struct-cols');
+      var rowsEl = document.getElementById('struct-rows');
+      var cols = Math.max(1, Math.min(200, parseInt(colsEl && colsEl.value, 10) || s.cols));
+      var rows = Math.max(1, Math.min(200, parseInt(rowsEl && rowsEl.value, 10) || s.rows));
+      var grid = makeGrid(cols, rows);
+      for (var y = 0; y < Math.min(rows, s.rows); y++) {
+        for (var x = 0; x < Math.min(cols, s.cols); x++) {
+          grid[y][x] = s.grid[y][x];
+        }
+      }
+      s.cols = cols;
+      s.rows = rows;
+      s.grid = grid;
+      this.renderCanvas();
       this.applyCanvasSize();
+      this.updateCode();
       this.save();
     },
 
-    syncSizeButtons: function () {
-      var self = this;
-      document.querySelectorAll('.size-btn').forEach(function (btn) {
-        btn.classList.toggle('is-active', parseInt(btn.getAttribute('data-size'), 10) === self.cellSize);
-      });
-      var custom = document.getElementById('custom-size');
-      if (custom && [50, 100].indexOf(this.cellSize) < 0) custom.value = this.cellSize;
-    },
-
     eff: function () {
-      return this.cellSize * this.zoom;
+      return BASE_CELL * this.zoom;
     },
 
     setZoom: function (z) {
@@ -457,6 +465,7 @@
       this.renderCatalog();
       this.renderCanvas();
       this.applyCanvasSize();
+      this.syncStructSize();
       this.syncProps();
       this.updateCode();
       this.save();
