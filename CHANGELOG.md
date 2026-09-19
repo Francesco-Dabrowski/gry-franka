@@ -9,7 +9,7 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 - Malu­nie jak w starym Paintcie: kolory oznaczają typ — ciemnobeżowy = ściana (`1`), jasnobeżowy = podłoga (`0`), granatowy = dziura (`x`), czarny = puste (poza strukturą, `.`).
 - Narzędzia: Ołówek, Wypełnij (flood fill), Gumka; prawy przycisk = gumka.
 - Katalog struktur: nowa, zmiana nazwy, duplikowanie, usuwanie; zapis w `localStorage`.
-- Parametr rozmiaru wyświetlanego tile'a: 50, 100 lub custom (8–200 px).
+- **Rozmiar struktury**: pola „kolumny × wiersze" (w tile'ach) ustawiają wymiary segmentu do malowania (zachowując istniejącą zawartość); skalowanie widoku realizuje Zoom.
 - Powiększanie/pomniejszanie mapy: przyciski − / + / Reset, `Ctrl` + kółko myszy, skróty `+`/`-`/`0`. Poziom zoomu pokazywany w procentach i zapisywany.
 - Parametry struktury 1–10: **rzadkość** (1 = bardzo bardzo rzadka, 10 = bardzo częsta) oraz **powtarzalność** (1 = 1–10 powtórzeń, 10 = 100–500+; w linii lub na powierzchni). Wartości zapisywane i dołączane do kodu/JSON struktury.
 - Każda struktura generuje kod (`ZFG-STRUKTURA v1`, znaki `. 0 1 x`) oraz JSON do skopiowania — do późniejszego przetworzenia na realne struktury Backrooms.
