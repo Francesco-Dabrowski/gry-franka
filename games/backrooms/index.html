@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backrooms — Zbiórka Franka Gry</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/games.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../../index.html">
+      <span class="brand__logo" data-pixel-icon="backrooms" data-pixel-size="16"></span>
+      <span>Backrooms <em>Gry</em></span>
+    </a>
+    <nav class="site-nav">
+      <a class="btn btn--ghost" href="../../index.html">← Menu</a>
+    </nav>
+  </header>
+
+  <main class="game-shell">
+    <div class="game-topbar">
+      <h1>Backrooms</h1>
+      <div class="hud" id="hud"></div>
+    </div>
+
+    <div class="game-stage game-stage--screen" id="stage"></div>
+
+    <div class="status-line" id="status">Cel: znajdź schody w dół. WSAD — ruch, Spacja — skok, Shift — sprint, mysz — obrót, F11 — pełny ekran.</div>
+
+    <div class="game-toolbar">
+      <button class="btn" id="btn-new" type="button">Nowa gra</button>
+      <button class="btn" id="btn-sound" type="button">Dźwięk: wł.</button>
+      <button class="btn" id="btn-vhs" type="button">VHS: mocne</button>
+      <button class="btn" id="btn-fs" type="button">Pełny ekran</button>
+      <a class="btn btn--ghost" href="../../index.html">Menu gier</a>
+    </div>
+  </main>
+
+  <script src="../../js/core/game.js"></script>
+  <script src="../../js/core/storage.js"></script>
+  <script src="../../js/core/icons.js"></script>
+  <script src="../../js/games/backrooms.js"></script>
+  <script>
+    (function () {
+      var game = new ZFG.games.Backrooms(document.getElementById('stage'), {
+        hud: document.getElementById('hud'),
+        status: document.getElementById('status')
+      });
+      game.init();
+      game.start();
+
+      document.getElementById('btn-new').addEventListener('click', function () {
+        game.newGame();
+      });
+
+      var soundBtn = document.getElementById('btn-sound');
+      soundBtn.addEventListener('click', function () {
+        var on = game.toggleSound();
+        soundBtn.textContent = 'Dźwięk: ' + (on ? 'wł.' : 'wył.');
+      });
+
+      var vhsBtn = document.getElementById('btn-vhs');
+      vhsBtn.addEventListener('click', function () {
+        var level = game.cycleVhs();
+        vhsBtn.textContent = 'VHS: ' + level;
+      });
+
+      document.getElementById('btn-fs').addEventListener('click', function () {
+        game.toggleFullscreen();
+      });
+    })();
+  </script>
+</body>
+</html>
