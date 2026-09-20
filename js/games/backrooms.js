@@ -460,23 +460,43 @@
     return ((255 << 24) | (byte(b) << 16) | (byte(g) << 8) | byte(r)) >>> 0;
   }
 
-  // --- struktury (rzut z gory), 1 znak = 3x3 male tile ---
+  // --- struktury (rzut z gory), 1 znak = 1 tile ---
   // '0' = podloga, '1' = sciana, 'x' = dziura w dol,
-  // '.' = puste — traktowane jak podloga (przestrzen miedzy strukturami)
-  var STRUCTURES = [
-    {
-      name: 'Przykład — filary',
-      cols: 3,
-      rows: 3,
-      rarity: 5,
-      repeat: 5,
-      data: [
-        '000',
-        '010',
-        '000'
-      ]
+  // '.' = puste — traktowane jak podloga
+  // Struktury wczytuje sie z localStorage (program "Wczytywanie struktur" / edytor).
+  // Brak struktur => caly swiat to podloga.
+  var STRUCTURES_KEY = 'zfg.backrooms.structures.v1';
+
+  function loadStoredStructures() {
+    try {
+      var raw = localStorage.getItem(STRUCTURES_KEY);
+      if (!raw) return [];
+      var data = JSON.parse(raw);
+      var list = data && data.structures ? data.structures
+        : (Object.prototype.toString.call(data) === '[object Array]' ? data : []);
+      var out = [];
+      for (var i = 0; i < list.length; i++) {
+        var s = list[i] || {};
+        var grid = s.grid || s.data || [];
+        var rows = [];
+        for (var r = 0; r < grid.length; r++) {
+          rows.push(typeof grid[r] === 'string' ? grid[r] : grid[r].join(''));
+        }
+        if (!rows.length || !rows[0].length) continue;
+        out.push({
+          name: s.name || ('struktura ' + (i + 1)),
+          cols: rows[0].length,
+          rows: rows.length,
+          rarity: s.rarity || 5,
+          repeat: s.repeat || 5,
+          data: rows
+        });
+      }
+      return out;
+    } catch (err) {
+      return [];
     }
-  ];
+  }
 
   function structureChar(ch) {
     if (ch === '1') return 1;
@@ -725,6 +745,7 @@
     reset() {
       this.chunks = new Map();
       this.worldSeed = (Math.random() * 4294967296) >>> 0;
+      this.structures = loadStoredStructures();
       this.time = 0;
       this.exitsNear = [];
       this.signalBars = 0;
@@ -832,7 +853,7 @@
     }
 
     pickStructure(sx, sy) {
-      var list = STRUCTURES;
+      var list = this.structures;
       var total = 0;
       var i;
       for (i = 0; i < list.length; i++) total += (list[i].rarity || 1);
@@ -847,18 +868,20 @@
     }
 
     structureTileAt(wx, wy) {
-      var list = STRUCTURES;
-      if (!list.length) return 0;
-      var st = list[0];
-      var sw = st.cols * 3;
-      var sh = st.rows * 3;
+      var list = this.structures;
+      if (!list || !list.length) return 0;
+      var base = list[0];
+      var sw = base.cols;
+      var sh = base.rows;
       var sx = Math.floor(wx / sw);
       var sy = Math.floor(wy / sh);
-      if (list.length > 1) st = this.pickStructure(sx, sy);
+      var st = list.length > 1 ? this.pickStructure(sx, sy) : base;
       var lx = wx - sx * sw;
       var ly = wy - sy * sh;
-      var cx = Math.floor(lx / 3);
-      var cy = Math.floor(ly / 3);
+      var cx = lx;
+      var cy = ly;
+      if (cx >= st.cols) cx = cx % st.cols;
+      if (cy >= st.rows) cy = cy % st.rows;
       var row = st.data[cy];
       if (!row) return 0;
       return structureChar(row.charAt(cx));

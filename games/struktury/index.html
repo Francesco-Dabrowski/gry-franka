@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wczytywanie struktur — Zbiórka Franka Gry</title>
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/games.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../../index.html">
+      <span class="brand__logo" data-pixel-icon="structure" data-pixel-size="16"></span>
+      <span>Wczytywanie struktur <em>Narzędzia</em></span>
+    </a>
+    <nav class="site-nav">
+      <a class="btn btn--ghost" href="../../index.html">← Menu</a>
+    </nav>
+  </header>
+
+  <main class="editor">
+    <div class="editor__body">
+      <aside class="editor__catalog">
+        <div class="editor__catalog-head">Wczytane struktury</div>
+        <div class="editor__list" id="list"></div>
+        <button class="btn btn--block" id="btn-delete" type="button">Usuń zaznaczoną</button>
+        <button class="btn btn--block" id="btn-clear" type="button">Wyczyść wszystkie</button>
+        <div class="editor__hint" id="status"></div>
+      </aside>
+
+      <section class="editor__stage">
+        <div class="editor__catalog-head">Wklej kod struktury (ZFG-STRUKTURA), podgląd i dodaj</div>
+        <textarea class="editor__code-area" id="input" spellcheck="false" placeholder="# ZFG-STRUKTURA v1&#10;# nazwa: Sala filarow&#10;# rzadkosc: 5&#10;# powtarzalnosc: 5&#10;# legenda: . puste | 0 podloga | 1 sciana | x dziura&#10;#---&#10;00000&#10;00100&#10;01110&#10;00100&#10;00000"></textarea>
+        <div class="game-toolbar">
+          <button class="btn" id="btn-preview" type="button">Podgląd</button>
+          <button class="btn btn--primary" id="btn-add" type="button">Dodaj strukturę</button>
+        </div>
+        <div class="editor__canvas-wrap">
+          <canvas id="preview" class="editor__canvas"></canvas>
+        </div>
+        <div class="editor__hint" id="meta"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="../../js/core/game.js"></script>
+  <script src="../../js/core/storage.js"></script>
+  <script src="../../js/core/icons.js"></script>
+  <script src="../../js/apps/gate.js"></script>
+  <script src="../../js/apps/structures.js"></script>
+  <script>
+    ZFG.gate('@#$', function () { ZFG.structures.init(); });
+  </script>
+</body>
+</html>

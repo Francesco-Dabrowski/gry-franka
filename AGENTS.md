@@ -28,6 +28,8 @@ Jeśli repozytorium nie ma jeszcze zdalnego `origin`, najpierw je dodaj/dopytać
 - Gry solo: Saper (`js/games/minesweeper.js`), Pasjans/Klondyk (`js/games/klondike.js`), Pasjans: Pająk (`js/games/spider.js`), Backrooms (`js/games/backrooms.js`).
 - Karty obsługuje wspólny moduł `js/core/cards.js`.
 - Backrooms to raycaster 2.5D w `js/games/backrooms.js` (canvas 320×240, tekstury generowane proceduralnie). Ściany mają wysokość 5 kafli, w podłodze są dziury (spadek = przegrana po 30 kafelkach) i motywy pokoi powtarzają się w dzielnicach 4×4 chunki.
+- Narzędzia (za hasłem `@#$`): Edytor struktur (`games/edytor/`, `js/apps/editor.js`) i Wczytywanie struktur (`games/struktury/`, `js/apps/structures.js`); wspólny magazyn `localStorage` klucz `zfg.backrooms.structures.v1`.
+- Backrooms generuje struktury wyłącznie z tego magazynu; brak struktur = sam świat z podłogi. 1 znak struktury = 1 tile.
 - Gry online (`js/net/`, `server/`, `tictactoe.js`, `pong.js`) są w repo, ale wyłączone z menu.
 - Ikony gier to pixel art rysowany w `js/core/icons.js` (canvas 16×16), bez emoji.
 - Po kliknięciu gry na stronie głównej gra ma startować od razu, bez dodatkowych kliknięć.

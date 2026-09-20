@@ -1,7 +1,7 @@
 (function () {
   window.ZFG = window.ZFG || {};
 
-  var KEY = 'zfg.structures.v1';
+  var KEY = 'zfg.backrooms.structures.v1';
   var B = 16;
   var PAINT = { '.': '#000000', '0': '#e8dcb0', '1': '#8a7a52', 'x': '#1b1b52' };
   var BASE_CELL = 24;
@@ -634,7 +634,7 @@
       var lines = [];
       lines.push('# ZFG-STRUKTURA v1');
       lines.push('# nazwa: ' + s.name);
-      lines.push('# komorka: 3x3 male tile');
+      lines.push('# komorka: 1 tile');
       lines.push('# rozmiar: ' + s.cols + 'x' + s.rows);
       lines.push('# rzadkosc: ' + (s.rarity || 5) + '/10  (1 = bardzo bardzo rzadka, 10 = bardzo czesta)');
       lines.push('# powtarzalnosc: ' + (s.repeat || 5) + '/10  (1 = ' + (REPEAT_HINTS[1]) + ' powtorzen, 10 = ' + (REPEAT_HINTS[10]) + '; w linii lub na powierzchni)');
@@ -651,7 +651,7 @@
         format: 'ZFG-STRUKTURA',
         version: 1,
         name: s.name,
-        cell: '3x3 tile',
+        cell: '1 tile',
         cols: s.cols,
         rows: s.rows,
         rarity: s.rarity || 5,

@@ -37,7 +37,7 @@
 
       <span class="editor__group">
         <span class="editor__label">Rozmiar struktury</span>
-        <input class="input editor__dim" id="struct-cols" type="number" min="1" max="200" value="16" title="kolumny" />
+        <input class="input editor__dim" id="struct-cols" type="number" min="1" max="200" value="16" title="kolumny (tile)" />
         <span class="editor__x">×</span>
         <input class="input editor__dim" id="struct-rows" type="number" min="1" max="200" value="16" title="wiersze" />
         <button class="btn" id="apply-struct-size" type="button">Ustaw</button>
@@ -82,7 +82,7 @@
           <canvas id="grid" class="editor__canvas"></canvas>
           <div class="editor__cursor" id="cursor"></div>
         </div>
-        <div class="editor__hint" id="hint">Kliknij/maluj jak w Paincie. Prawy przycisk = gumka. Każdy piksel = 3×3 małe tile.</div>
+        <div class="editor__hint" id="hint">Kliknij/maluj jak w Paincie. Prawy przycisk = gumka. Każdy piksel = 1 tile.</div>
       </section>
 
       <aside class="editor__code">
@@ -104,9 +104,10 @@
   <script src="../../js/core/game.js"></script>
   <script src="../../js/core/storage.js"></script>
   <script src="../../js/core/icons.js"></script>
+  <script src="../../js/apps/gate.js"></script>
   <script src="../../js/apps/editor.js"></script>
   <script>
-    ZFG.editor.init();
+    ZFG.gate('@#$', function () { ZFG.editor.init(); });
   </script>
 </body>
 </html>

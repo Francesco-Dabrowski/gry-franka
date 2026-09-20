@@ -4,6 +4,12 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 
 ## 2026-09-20
 
+### Wczytywanie struktur + hasło + 1 znak = 1 tile
+- Nowy program w menu **„Wczytywanie struktur"** (`games/struktury/`): wklejasz kod `ZFG-STRUKTURA`, widzisz **podgląd 2D** i dodajesz do listy (usuń / wyczyść wszystkie). Zapis w `localStorage`.
+- **Backrooms generuje wyłącznie struktury z tej listy** (wspólny magazyn z edytorem). Gdy lista jest pusta — **cały świat to podłoga** (żadnych ścian ani dziur).
+- Wejście do **Edytora struktur** i **Wczytywania struktur** wymaga hasła **`@#$`**.
+- Zmiana skali: **1 znak struktury = 1 tile** (wcześniej 3×3). Ściana (filar) ma teraz szerokość **1×1 tile** — taką jak kafel sufitu.
+
 ### Backrooms — konkretna struktura zamiast losowości
 - Wdrożony wzór użytkownika „Przykład — filary" (3×3: `000 / 010 / 000`, pojedynczy filar co 3 komórki) jako **jedyna** struktura w świecie.
 - Render studni (dziur `x`) w 3D przepisany: ściany liczone jako krawędzie zewnętrzne studni (per-chunk), z gradientem głębi do czerni i rozjaśnioną krawędzią u góry — koniec płaskich czarnych kwadratów.

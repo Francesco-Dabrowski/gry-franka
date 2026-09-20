@@ -116,6 +116,17 @@
       set(ctx, '#1b1b52', 10, 6, 2, 2);
     },
 
+    structure: function (ctx) {
+      set(ctx, '#101010', 0, 0, 16, 16);
+      var colored = { '1,1': '#8a7a52', '3,1': '#1b1b52', '0,2': '#8a7a52', '2,3': '#e8dcb0' };
+      for (var y = 0; y < 4; y++) {
+        for (var x = 0; x < 4; x++) {
+          var c = colored[x + ',' + y] || '#e8e8e8';
+          set(ctx, c, 1 + x * 3, 1 + y * 3, 2, 2);
+        }
+      }
+    },
+
     computer: function (ctx) {
       set(ctx, '#404040', 1, 2, 14, 9);
       set(ctx, '#008080', 2, 3, 12, 7);

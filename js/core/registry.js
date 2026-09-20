@@ -46,6 +46,15 @@
       url: 'games/edytor/',
       tag: 'Narzędzie',
       desc: 'Maluj struktury do Backrooms jak w Paint i kopiuj kod.'
+    },
+    {
+      id: 'struktury',
+      name: 'Wczytywanie struktur',
+      icon: 'structure',
+      type: 'solo',
+      url: 'games/struktury/',
+      tag: 'Narzędzie',
+      desc: 'Wklej kody struktur z podglądem 2D — Backrooms będzie je generować.'
     }
   ];
 
