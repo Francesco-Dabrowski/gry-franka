@@ -460,35 +460,27 @@
     return ((255 << 24) | (byte(b) << 16) | (byte(g) << 8) | byte(r)) >>> 0;
   }
 
-  // --- room patterns (top-down) ---
-  // '0' = podloga (mozna chodzic), '1' = sciana, 'x' = dziura w dol (nieskonczona)
-  // Wzory sa kafelkowane, aby wypelnic chunk 16x16. weight = czestotliwosc.
-  var PATTERNS = [
+  // --- struktury (rzut z gory), 1 znak = 3x3 male tile ---
+  // '0' = podloga, '1' = sciana, 'x' = dziura w dol,
+  // '.' = puste — traktowane jak podloga (przestrzen miedzy strukturami)
+  var STRUCTURES = [
     {
-      name: 'filary-2x2',
-      weight: 1,
-      rows: [
-        '1111111111111111',
-        '1000000000000001',
-        '1011000011000101',
-        '1011000011000101',
-        '1000000000000001',
-        '1000000000000001',
-        '1000011001100001',
-        '1000011001100001',
-        '1000000000000001',
-        '1000011001100001',
-        '1000011001100001',
-        '1000000000000001',
-        '1000000000000001',
-        '1011000011000101',
-        '1011000011000101',
-        '1111111111111111'
+      name: 'Przykład — filary',
+      cols: 5,
+      rows: 5,
+      rarity: 5,
+      repeat: 5,
+      data: [
+        '00000',
+        '00100',
+        '01110',
+        '00100',
+        '00000'
       ]
     }
   ];
 
-  function patternChar(ch) {
+  function structureChar(ch) {
     if (ch === '1') return 1;
     if (ch === 'x' || ch === 'X') return HOLE_TILE;
     return 0;
@@ -841,48 +833,52 @@
       return ch;
     }
 
-    choosePattern(cx, cy) {
-      var list = PATTERNS;
+    pickStructure(sx, sy) {
+      var list = STRUCTURES;
       var total = 0;
       var i;
-      for (i = 0; i < list.length; i++) total += (list[i].weight || 1);
-      var v = hashInt(cx, cy, (this.worldSeed ^ 0x7A11) >>> 0) % 1000000;
+      for (i = 0; i < list.length; i++) total += (list[i].rarity || 1);
+      var v = hashInt(sx, sy, (this.worldSeed ^ 0x5A17) >>> 0) % 1000000;
       var pick = (v / 1000000) * total;
       var acc = 0;
       for (i = 0; i < list.length; i++) {
-        acc += (list[i].weight || 1);
+        acc += (list[i].rarity || 1);
         if (pick < acc) return list[i];
       }
       return list[list.length - 1];
+    },
+
+    structureTileAt(wx, wy) {
+      var list = STRUCTURES;
+      if (!list.length) return 0;
+      var st = list[0];
+      var sw = st.cols * 3;
+      var sh = st.rows * 3;
+      var sx = Math.floor(wx / sw);
+      var sy = Math.floor(wy / sh);
+      if (list.length > 1) st = this.pickStructure(sx, sy);
+      var lx = wx - sx * sw;
+      var ly = wy - sy * sh;
+      var cx = Math.floor(lx / 3);
+      var cy = Math.floor(ly / 3);
+      var row = st.data[cy];
+      if (!row) return 0;
+      return structureChar(row.charAt(cx));
     }
 
     generateChunk(cx, cy) {
       var tiles = new Uint8Array(C * C);
       tiles.fill(1);
       var rng = mulberry32(hashInt(cx, cy, (this.worldSeed ^ 0x51A7) >>> 0) >>> 0);
-      var pattern = this.choosePattern(cx, cy);
-      var rows = pattern.rows;
-      var ph = rows.length;
-      var pw = rows[0].length;
-      var i, x, y;
+      var baseX = cx * C;
+      var baseY = cy * C;
+      var x, y;
 
       for (y = 0; y < C; y++) {
-        var prow = rows[y % ph];
         for (x = 0; x < C; x++) {
-          tiles[y * C + x] = patternChar(prow.charAt(x % pw));
+          tiles[y * C + x] = this.structureTileAt(baseX + x, baseY + y);
         }
       }
-
-      var hm = C >> 1;
-      tiles[1 * C + hm] = 0;
-      tiles[(C - 2) * C + hm] = 0;
-      tiles[hm * C + 1] = 0;
-      tiles[hm * C + (C - 2)] = 0;
-      carveRect(tiles, hm - 1, hm - 1, 3, 3, 0);
-      connectCells(tiles, hm, 0, hm, hm);
-      connectCells(tiles, hm, C - 1, hm, hm);
-      connectCells(tiles, 0, hm, hm, hm);
-      connectCells(tiles, C - 1, hm, hm, hm);
 
       var stair = null;
       if (rng() < EXIT_CHANCE) {

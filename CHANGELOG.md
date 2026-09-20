@@ -4,6 +4,12 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 
 ## 2026-09-20
 
+### Backrooms — konkretna struktura zamiast losowości
+- Wdrożony wzór użytkownika „Przykład — filary" (5×5, `1` = ściana, `0` = podłoga) jako **jedyna** struktura w świecie.
+- 1 znak wzoru = blok 3×3 kafle, wzór powtarza się globalnie (periodycznie) i bez szwów na granicach chunków.
+- Przestrzeń między strukturami (znak `.`) jest podłogą; usunięte losowe przejścia i carving, które psuły wzór.
+- Ścieżki między filarami są przechodnie, więc świat pozostaje grywalny.
+
 ### Edytor struktur (nowy program w menu)
 - Program „Edytor struktur" w menu gier: biała siatka na czarnych pikselach, każdy piksel = pole 3×3 małe tile.
 - Malu­nie jak w starym Paintcie: kolory oznaczają typ — ciemnobeżowy = ściana (`1`), jasnobeżowy = podłoga (`0`), granatowy = dziura (`x`), czarny = puste (poza strukturą, `.`).
