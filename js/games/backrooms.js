@@ -466,16 +466,14 @@
   var STRUCTURES = [
     {
       name: 'Przykład — filary',
-      cols: 5,
-      rows: 5,
+      cols: 3,
+      rows: 3,
       rarity: 5,
       repeat: 5,
       data: [
-        '00000',
-        '00100',
-        '01110',
-        '00100',
-        '00000'
+        '010',
+        '111',
+        '010'
       ]
     }
   ];
