@@ -466,14 +466,26 @@
   var STRUCTURES = [
     {
       name: 'Przykład — filary',
-      cols: 3,
-      rows: 3,
+      cols: 15,
+      rows: 15,
       rarity: 5,
       repeat: 5,
       data: [
-        '010',
-        '111',
-        '010'
+        '001111111111100',
+        '000000000000000',
+        '10xxx0xxx0xxx01',
+        '10xxx0xxx0xxx01',
+        '10xxx0xxx0xxx01',
+        '100000000000001',
+        '10xxx0xxx0xxx01',
+        '10xxx0xxx0xxx01',
+        '10xxx0xxx0xxx01',
+        '100000000000001',
+        '10xxx0xxx0xxx01',
+        '10xxx0xxx0xxx01',
+        '10xxx0xxx0xxx01',
+        '000000000000000',
+        '001111111111100'
       ]
     }
   ];
