@@ -55,7 +55,8 @@
   var STAIR_SLOTS = 4;
   var PITCH_MAX = 95;
   var ABYSS_DEPTH = 44;
-  var DISTRICT_TILES = 128;
+  var LEAF_BASE = 4;
+  var MAX_LEVEL = 7;
   var STAMINA_DRAIN = 16;
   var STAMINA_REGEN = 24;
 
@@ -505,6 +506,34 @@
     return 0;
   }
 
+  // Powtarzalnosc 1..10 -> liczba powtorzen struktury w dzielnicy.
+  var REPEAT_RANGES = {
+    1: [1, 1], 2: [2, 3], 3: [4, 5], 4: [6, 10], 5: [11, 25],
+    6: [26, 50], 7: [51, 100], 8: [101, 150], 9: [151, 200], 10: [201, 500]
+  };
+
+  function copiesFor(repeat, h) {
+    var r = REPEAT_RANGES[Math.max(1, Math.min(10, repeat | 0))] || [1, 1];
+    return r[0] + Math.floor(h * (r[1] - r[0] + 1));
+  }
+
+  // Siatka kopii (w x h) mieszczaca sie w zakresie [lo, hi], mozliwie kwadratowa.
+  function gridFor(lo, hi) {
+    lo = Math.max(1, lo);
+    hi = Math.max(lo, hi);
+    var best = null;
+    var maxW = Math.min(hi, Math.ceil(Math.sqrt(hi)) + 4, 64);
+    for (var w = 1; w <= maxW; w++) {
+      var h = Math.ceil(lo / w);
+      var prod = w * h;
+      if (prod < lo || prod > hi) continue;
+      var score = Math.abs(w - h) + (prod - lo) * 0.01;
+      if (!best || score < best.score) best = { w: w, h: h, score: score };
+    }
+    if (!best) best = { w: lo, h: 1, score: 0 };
+    return best;
+  }
+
   class Backrooms extends ZFG.Game {
     constructor(container, opts) {
       super(container, opts);
@@ -747,7 +776,7 @@
       this.chunks = new Map();
       this.worldSeed = (Math.random() * 4294967296) >>> 0;
       this.structures = loadStoredStructures();
-      this.districtCache = new Map();
+      this.pickCache = new Map();
       this.time = 0;
       this.exitsNear = [];
       this.signalBars = 0;
@@ -854,40 +883,76 @@
       return ch;
     }
 
-    pickStructure(sx, sy) {
+    pickStructure(sx, sy, level) {
+      var key = sx + ',' + sy + ',' + (level || 0);
+      var cached = this.pickCache ? this.pickCache.get(key) : null;
+      if (cached) return cached;
       var list = this.structures;
+      if (!list || !list.length) return null;
       var total = 0;
       var i;
       for (i = 0; i < list.length; i++) total += (list[i].rarity || 1);
-      var v = hashInt(sx, sy, (this.worldSeed ^ 0x5A17) >>> 0) % 1000000;
+      var salt = (this.worldSeed ^ 0x5A17 ^ Math.imul((level || 0) + 1, 2654435761)) >>> 0;
+      var v = hashInt(sx, sy, salt) % 1000000;
       var pick = (v / 1000000) * total;
       var acc = 0;
+      var chosen = list[list.length - 1];
       for (i = 0; i < list.length; i++) {
         acc += (list[i].rarity || 1);
-        if (pick < acc) return list[i];
+        if (pick < acc) { chosen = list[i]; break; }
       }
-      return list[list.length - 1];
+      if (this.pickCache) {
+        if (this.pickCache.size > 20000) this.pickCache.clear();
+        this.pickCache.set(key, chosen);
+      }
+      return chosen;
+    }
+
+    levelFor(st, cx, cy, level) {
+      var salt = (this.worldSeed ^ 0x4C0F ^ Math.imul(level + 1, 40503)) >>> 0;
+      var h = hash2(cx * 3 + 1, cy * 7 + 2, salt);
+      var range = REPEAT_RANGES[Math.max(1, Math.min(10, st.repeat || 5))] || [1, 1];
+      var copies = copiesFor(st.repeat || 5, h);
+      var grid = gridFor(copies, range[1]);
+      var need = Math.max(grid.w * st.cols, grid.h * st.rows);
+      var L = 0;
+      var s = LEAF_BASE;
+      while (s < need && L < MAX_LEVEL) { s <<= 1; L++; }
+      return { level: L, w: grid.w, h: grid.h };
+    }
+
+    structureForTile(wx, wy) {
+      var level = MAX_LEVEL;
+      while (level >= 0) {
+        var size = LEAF_BASE << level;
+        var cx = Math.floor(wx / size);
+        var cy = Math.floor(wy / size);
+        var cand = this.pickStructure(cx, cy, level);
+        if (!cand) return null;
+        var info = this.levelFor(cand, cx, cy, level);
+        if (level <= info.level) {
+          return { st: cand, ox: cx * size, oy: cy * size, size: size, w: info.w, h: info.h };
+        }
+        level--;
+      }
+      var s0 = LEAF_BASE;
+      var cx0 = Math.floor(wx / s0);
+      var cy0 = Math.floor(wy / s0);
+      var st0 = this.pickStructure(cx0, cy0, 0);
+      var info0 = this.levelFor(st0, cx0, cy0, 0);
+      return { st: st0, ox: cx0 * s0, oy: cy0 * s0, size: s0, w: info0.w, h: info0.h };
     }
 
     structureTileAt(wx, wy) {
-      var list = this.structures;
-      if (!list || !list.length) return 0;
-
-      // Swiat dzielony na duze dzielnice. Jedna dzielnica = jedna struktura,
-      // powtarzana w jej obrebie. Struktury nie nakladaja sie (kazdy tile
-      // nalezy do dokladnie jednej dzielnicy).
-      var dx = Math.floor(wx / DISTRICT_TILES);
-      var dy = Math.floor(wy / DISTRICT_TILES);
-
-      var key = dx + ',' + dy;
-      var st = this.districtCache.get(key);
-      if (!st) {
-        st = this.pickStructure(dx, dy);
-        this.districtCache.set(key, st);
-      }
-
-      var cx = ((wx % st.cols) + st.cols) % st.cols;
-      var cy = ((wy % st.rows) + st.rows) % st.rows;
+      if (!this.structures || !this.structures.length) return 0;
+      var leaf = this.structureForTile(wx, wy);
+      if (!leaf) return 0;
+      var st = leaf.st;
+      var lx = wx - leaf.ox;
+      var ly = wy - leaf.oy;
+      if (lx < 0 || ly < 0 || lx >= leaf.w * st.cols || ly >= leaf.h * st.rows) return 0;
+      var cx = lx % st.cols;
+      var cy = ly % st.rows;
       var row = st.data[cy];
       if (!row) return 0;
       return structureChar(row.charAt(cx));

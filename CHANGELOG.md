@@ -9,7 +9,8 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 - **Backrooms generuje wyłącznie struktury z tej listy** (wspólny magazyn z edytorem). Gdy lista jest pusta — **cały świat to podłoga** (żadnych ścian ani dziur).
 - Wejście do **Edytora struktur** i **Wczytywania struktur** wymaga hasła **`@#$`**.
 - Zmiana skali: **1 znak struktury = 1 tile** (wcześniej 3×3). Ściana (filar) ma teraz szerokość **1×1 tile** — taką jak kafel sufitu.
-- Generacja **dzielnicowa**: świat dzielony na dzielnice 128×128 tile'ów; każda dzielnica dostaje jedną strukturę (losowaną wg rzadkości) i powtarza ją u siebie w całości. Struktury **nie nakładają się** i nie mieszają (koniec „sałatki"); wzór jest ciągły w obrębie dzielnicy.
+- Generacja **dzielnicowa**: świat dzielony na dzielnice; każda dzielnica dostaje jedną strukturę (losowaną wg rzadkości). Struktury **nie nakładają się** i nie mieszają (koniec „sałatki").
+- **Powtarzalność = konkretna liczba kopii** w dzielnicy: 1→1, 2→2–3, 3→4–5, 4→6–10, 5→11–25, 6→26–50, 7→51–100, 8→101–150, 9→151–200, 10→201–500+. Wielkość dzielnicy dobiera się tak, by zmieścić dokładnie tyle kopii; resztę dzielnicy wypełnia podłoga.
 
 ### Backrooms — konkretna struktura zamiast losowości
 - Wdrożony wzór użytkownika „Przykład — filary" (3×3: `000 / 010 / 000`, pojedynczy filar co 3 komórki) jako **jedyna** struktura w świecie.
