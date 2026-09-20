@@ -846,7 +846,7 @@
         if (pick < acc) return list[i];
       }
       return list[list.length - 1];
-    },
+    }
 
     structureTileAt(wx, wy) {
       var list = STRUCTURES;
