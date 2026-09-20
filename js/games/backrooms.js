@@ -55,6 +55,7 @@
   var STAIR_SLOTS = 4;
   var PITCH_MAX = 95;
   var ABYSS_DEPTH = 44;
+  var DISTRICT_TILES = 128;
   var STAMINA_DRAIN = 16;
   var STAMINA_REGEN = 24;
 
@@ -746,6 +747,7 @@
       this.chunks = new Map();
       this.worldSeed = (Math.random() * 4294967296) >>> 0;
       this.structures = loadStoredStructures();
+      this.districtCache = new Map();
       this.time = 0;
       this.exitsNear = [];
       this.signalBars = 0;
@@ -870,18 +872,22 @@
     structureTileAt(wx, wy) {
       var list = this.structures;
       if (!list || !list.length) return 0;
-      var base = list[0];
-      var sw = base.cols;
-      var sh = base.rows;
-      var sx = Math.floor(wx / sw);
-      var sy = Math.floor(wy / sh);
-      var st = list.length > 1 ? this.pickStructure(sx, sy) : base;
-      var lx = wx - sx * sw;
-      var ly = wy - sy * sh;
-      var cx = lx;
-      var cy = ly;
-      if (cx >= st.cols) cx = cx % st.cols;
-      if (cy >= st.rows) cy = cy % st.rows;
+
+      // Swiat dzielony na duze dzielnice. Jedna dzielnica = jedna struktura,
+      // powtarzana w jej obrebie. Struktury nie nakladaja sie (kazdy tile
+      // nalezy do dokladnie jednej dzielnicy).
+      var dx = Math.floor(wx / DISTRICT_TILES);
+      var dy = Math.floor(wy / DISTRICT_TILES);
+
+      var key = dx + ',' + dy;
+      var st = this.districtCache.get(key);
+      if (!st) {
+        st = this.pickStructure(dx, dy);
+        this.districtCache.set(key, st);
+      }
+
+      var cx = ((wx % st.cols) + st.cols) % st.cols;
+      var cy = ((wy % st.rows) + st.rows) % st.rows;
       var row = st.data[cy];
       if (!row) return 0;
       return structureChar(row.charAt(cx));
