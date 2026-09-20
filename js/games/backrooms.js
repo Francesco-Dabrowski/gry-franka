@@ -17,8 +17,8 @@
   var RW = 320;
   var RH = 240;
   var HALF = RH / 2;
-  var LEVELS = 32;
-  var MAXDIST = 26;
+  var LEVELS = 40;
+  var MAXDIST = 78;
   var LSCALE = 128 / MAXDIST;
   var PLAYER_R = 0.26;
   var FOV = 0.72;
@@ -27,9 +27,9 @@
   var EYE_MIN = WALL_H * 0.12;
   var EYE_MAX = WALL_H - 0.08;
 
-  var LOAD_RADIUS = 2;
-  var EVICT_AFTER = 60;
-  var EVICT_DIST = 100;
+  var LOAD_RADIUS = 6;
+  var EVICT_AFTER = 120;
+  var EVICT_DIST = 230;
   var EXIT_CHANCE = 0.1;
   var DARK_PERMILLE = 26;
   var FLOOR_DARK_PERMILLE = 33;

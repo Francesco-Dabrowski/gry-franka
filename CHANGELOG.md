@@ -9,6 +9,7 @@ Wszystkie istotne zmiany w projekcie. Format: data — opis.
 - 1 znak wzoru = blok 3×3 kafle, wzór powtarza się globalnie (periodycznie) i bez szwów na granicach chunków.
 - Przestrzeń między strukturami (znak `.`) jest podłogą; usunięte losowe przejścia i carving, które psuły wzór.
 - Ścieżki między filarami są przechodnie, więc świat pozostaje grywalny.
+- Zasięg widzenia zwiększony 3× (`MAXDIST 26 → 78`), więcej stopni cieniowania (`LEVELS 32 → 40`), ładowanie chunków poszerzone (`LOAD_RADIUS 2 → 6`).
 
 ### Edytor struktur (nowy program w menu)
 - Program „Edytor struktur" w menu gier: biała siatka na czarnych pikselach, każdy piksel = pole 3×3 małe tile.
