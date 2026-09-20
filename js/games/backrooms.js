@@ -466,26 +466,14 @@
   var STRUCTURES = [
     {
       name: 'Przykład — filary',
-      cols: 15,
-      rows: 15,
+      cols: 3,
+      rows: 3,
       rarity: 5,
       repeat: 5,
       data: [
-        '001111111111100',
-        '000000000000000',
-        '10xxx0xxx0xxx01',
-        '10xxx0xxx0xxx01',
-        '10xxx0xxx0xxx01',
-        '100000000000001',
-        '10xxx0xxx0xxx01',
-        '10xxx0xxx0xxx01',
-        '10xxx0xxx0xxx01',
-        '100000000000001',
-        '10xxx0xxx0xxx01',
-        '10xxx0xxx0xxx01',
-        '10xxx0xxx0xxx01',
-        '000000000000000',
-        '001111111111100'
+        '000',
+        '010',
+        '000'
       ]
     }
   ];
@@ -921,8 +909,22 @@
         }
       }
 
+      var pitEdges = [];
+      for (var ey = 0; ey < C; ey++) {
+        for (var exx = 0; exx < C; exx++) {
+          if (tiles[ey * C + exx] !== HOLE_TILE) continue;
+          var wxx = baseX + exx;
+          var wyy = baseY + ey;
+          if (this.structureTileAt(wxx - 1, wyy) !== HOLE_TILE) pitEdges.push({ axis: 0, coord: wxx, v0: wyy, v1: wyy + 1 });
+          if (this.structureTileAt(wxx + 1, wyy) !== HOLE_TILE) pitEdges.push({ axis: 0, coord: wxx + 1, v0: wyy, v1: wyy + 1 });
+          if (this.structureTileAt(wxx, wyy - 1) !== HOLE_TILE) pitEdges.push({ axis: 1, coord: wyy, v0: wxx, v1: wxx + 1 });
+          if (this.structureTileAt(wxx, wyy + 1) !== HOLE_TILE) pitEdges.push({ axis: 1, coord: wyy + 1, v0: wxx, v1: wxx + 1 });
+        }
+      }
+
       return {
         tiles: tiles,
+        pitEdges: pitEdges,
         lastSeen: this.time,
         hasStair: !!stair,
         stair: stair,
@@ -2085,7 +2087,10 @@
             var fz = 1 + z / fadeDepth;
             if (fz < 0) fz = 0;
             else if (fz > 1) fz = 1;
-            sh *= fz;
+            sh *= 0.2 + 0.8 * fz;
+            var band = Math.floor(-z * 1.5);
+            if (band & 1) sh *= 0.88;
+            if (z > -0.16) sh *= 1.3;
           }
           buf[idx] = pack(cr * sh, cg * sh, cb * sh);
           dbuf[idx] = t;
@@ -2133,16 +2138,22 @@
     }
 
     renderPitTile(tx, ty, camZ, horizon, dirX, dirY, planeX, planeY) {
-      var c0 = 150;
-      var c1 = 140;
-      var c2 = 106;
+      var c0 = 176;
+      var c1 = 164;
+      var c2 = 124;
       var depth = ABYSS_DEPTH;
-      var px = this.px;
-      var py = this.py;
-      if (px > tx) this._vplane(0, tx, ty, ty + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
-      if (px < tx + 1) this._vplane(0, tx + 1, ty, ty + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
-      if (py > ty) this._vplane(1, ty, tx, tx + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
-      if (py < ty + 1) this._vplane(1, ty + 1, tx, tx + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      if (this.tileAt(tx - 0.5, ty + 0.5) !== HOLE_TILE) {
+        this._vplane(0, tx, ty, ty + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      }
+      if (this.tileAt(tx + 1.5, ty + 0.5) !== HOLE_TILE) {
+        this._vplane(0, tx + 1, ty, ty + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      }
+      if (this.tileAt(tx + 0.5, ty - 0.5) !== HOLE_TILE) {
+        this._vplane(1, ty, tx, tx + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      }
+      if (this.tileAt(tx + 0.5, ty + 1.5) !== HOLE_TILE) {
+        this._vplane(1, ty + 1, tx, tx + 1, -depth, 0, c0, c1, c2, depth, camZ, horizon, dirX, dirY, planeX, planeY);
+      }
     }
 
     renderShafts3D(dirX, dirY, planeX, planeY, camZ, horizon, topLevel) {
@@ -2162,18 +2173,23 @@
         }
       }
 
-      var ptx = Math.floor(this.px);
-      var pty = Math.floor(this.py);
-      var pr = 4;
-      for (var oy = -pr; oy <= pr; oy++) {
-        for (var ox = -pr; ox <= pr; ox++) {
-          var tx = ptx + ox;
-          var ty = pty + oy;
-          if (this.tileAt(tx + 0.5, ty + 0.5) !== HOLE_TILE) continue;
-          var hx = tx + 0.5 - this.px;
-          var hy = ty + 0.5 - this.py;
-          if (hx * hx + hy * hy > 100) continue;
-          this.renderPitTile(tx, ty, camZ, horizon, dirX, dirY, planeX, planeY);
+      var c0 = 176;
+      var c1 = 164;
+      var c2 = 124;
+      var pcx = Math.floor(this.px / C);
+      var pcy = Math.floor(this.py / C);
+      for (var cdx = -2; cdx <= 2; cdx++) {
+        for (var cdy = -2; cdy <= 2; cdy++) {
+          var pch = this.getChunk(pcx + cdx, pcy + cdy);
+          var edges = pch.pitEdges;
+          if (!edges) continue;
+          for (var ei = 0; ei < edges.length; ei++) {
+            var ed = edges[ei];
+            var dist = ed.axis === 0 ? Math.abs(ed.coord - this.px) : Math.abs(ed.coord - this.py);
+            if (dist > 24) continue;
+            this._vplane(ed.axis, ed.coord, ed.v0, ed.v1, -ABYSS_DEPTH, 0,
+              c0, c1, c2, 7, camZ, horizon, dirX, dirY, planeX, planeY);
+          }
         }
       }
     }
